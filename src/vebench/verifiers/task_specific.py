@@ -86,6 +86,9 @@ def _media_context(workspace: Path, config: dict[str, Any]) -> tuple[dict[str, f
         "gate_non_degenerate_video": 0.0,
         "gate_non_degenerate_audio": 0.0,
     }
+    scores.update(_history_artifact_scores(workspace))
+    if scores["run_history_transcript_score"] < 1.0:
+        notes.append("missing or too-small submit/run_history.md or submit/agent_transcript.md")
     fatal = False
     if not scores["gate_source_material_exists"]:
         notes.append("missing materials/source.mp4; task package is metadata-only or incomplete")
@@ -260,7 +263,11 @@ def _score_pancake(
 
     scores["hard_1_format_duration"] = _format_score(scores)
     scores["hard_6_audio_quality_cut_smoothness"] = scores.get("audio_quality", 0.0)
-    scores["metadata"] = clamp01(0.60 * edit_score + 0.40 * _edit_media_consistency_score(extract_source_ranges(edit), matches))
+    scores["metadata"] = clamp01(
+        0.50 * edit_score
+        + 0.30 * _edit_media_consistency_score(extract_source_ranges(edit), matches)
+        + 0.20 * scores.get("run_history_transcript_score", 0.0)
+    )
 
     weights = config["weights"]
     total = sum(scores.get(key, 0.0) * weight for key, weight in weights.items())
@@ -338,7 +345,10 @@ def _score_piecewise_sync(
 
     scores["format_compliance"] = _format_score(scores)
     scores["deliverable_quality_explainability"] = clamp01(
-        0.45 * scores["format_compliance"] + 0.30 * scores.get("audio_quality", 0.0) + 0.25 * edit_score
+        0.40 * scores["format_compliance"]
+        + 0.25 * scores.get("audio_quality", 0.0)
+        + 0.20 * edit_score
+        + 0.15 * scores.get("run_history_transcript_score", 0.0)
     )
     total = (
         config["weights"]["local_av_sync_repair"] * scores["local_av_sync_repair"]
@@ -422,10 +432,11 @@ def _score_interview(
     )
 
     scores["source_fidelity_format_naturalness"] = clamp01(
-        0.35 * _format_score(scores)
-        + 0.25 * scores["source_match_fraction"]
-        + 0.20 * scores.get("video_integrity", 0.0)
+        0.30 * _format_score(scores)
+        + 0.22 * scores["source_match_fraction"]
+        + 0.18 * scores.get("video_integrity", 0.0)
         + 0.20 * edit_score
+        + 0.10 * scores.get("run_history_transcript_score", 0.0)
     )
     total = (
         config["weights"]["speech_cleanup_semantic_preservation"] * scores["speech_cleanup_semantic_preservation"]
@@ -454,6 +465,18 @@ def _format_score(scores: dict[str, float]) -> float:
         + 0.10 * scores.get("video_codec_score", 0.0)
         + 0.10 * scores.get("audio_codec_score", 0.0)
     )
+
+
+def _history_artifact_scores(workspace: Path) -> dict[str, float]:
+    run_history = workspace / "submit" / "run_history.md"
+    agent_transcript = workspace / "submit" / "agent_transcript.md"
+    history_ok = run_history.exists() and run_history.stat().st_size >= 80
+    transcript_ok = agent_transcript.exists() and agent_transcript.stat().st_size >= 80
+    return {
+        "run_history_exists": 1.0 if history_ok else 0.0,
+        "agent_transcript_exists": 1.0 if transcript_ok else 0.0,
+        "run_history_transcript_score": (float(history_ok) + float(transcript_ok)) / 2.0,
+    }
 
 
 def _caption_text(edit: dict[str, Any]) -> str:

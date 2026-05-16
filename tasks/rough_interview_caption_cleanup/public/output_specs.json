@@ -15,7 +15,9 @@
   "submission_files": [
     "submit/output.mp4",
     "submit/captions.srt",
-    "submit/edit_decision.json"
+    "submit/edit_decision.json",
+    "submit/run_history.md",
+    "submit/agent_transcript.md"
   ],
   "task_id": "rough_interview_caption_cleanup"
 }

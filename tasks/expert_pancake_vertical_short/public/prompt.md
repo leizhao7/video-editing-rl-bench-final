@@ -22,3 +22,5 @@ Requirements:
 - Do not add external footage, unrelated music, synthetic narration, or generated visuals.
 - Write `submit/edit_decision.json` with source ranges, output ranges, crop decisions, caption
   text/timing, audio adjustments, and measured self-checks.
+- Write `submit/run_history.md` and `submit/agent_transcript.md` with your action log and
+  observable work transcript/summary.

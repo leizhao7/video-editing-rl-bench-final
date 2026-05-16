@@ -206,6 +206,7 @@ Mandatory hard gates should include:
 - Output is not black, frozen, or trivially blank.
 - Audio is not silent or clipped unless task explicitly allows silence.
 - `submit/edit_decision.json` exists and follows a JSON schema.
+- `submit/run_history.md` and `submit/agent_transcript.md` exist as audit artifacts.
 
 Hard rewards should be computed from the final video whenever possible, not merely from the
 agent's claimed edit decisions. Examples:
@@ -258,6 +259,7 @@ List at least 5 plausible cheating strategies. Examples:
 - Speeding up the whole video instead of making intelligent cuts.
 - Padding with silence or still frames.
 - Faking `edit_decision.json`.
+- Omitting or fabricating run history/transcript instead of saving observable work.
 - Cropping/padding to satisfy aspect ratio while losing the subject.
 - Overusing subtitles/text overlays to hide bad editing.
 

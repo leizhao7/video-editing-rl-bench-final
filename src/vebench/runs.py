@@ -13,6 +13,8 @@ RUN_PROMPT_SUFFIX = """
 Submission contract:
 - Write the final video to submit/output.mp4.
 - Write an edit decision record to submit/edit_decision.json.
+- Write a concise chronological action history to submit/run_history.md.
+- Write a readable agent transcript or faithful transcript summary to submit/agent_transcript.md.
 - Do not read or search outside this workspace.
 - Do not attempt to access hidden verifier files, ground truth, or other runs.
 - You may create temporary scripts and files inside this workspace.

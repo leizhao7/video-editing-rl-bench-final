@@ -50,6 +50,8 @@ Write:
 ```text
 submit/output.mp4
 submit/edit_decision.json
+submit/run_history.md
+submit/agent_transcript.md
 ```
 
 `submit/output.mp4` must be a playable video file unless the task explicitly says otherwise.
@@ -79,9 +81,15 @@ submit/edit_decision.json
 }
 ```
 
+`submit/run_history.md` should be a concise chronological action log: what you inspected, the
+edit plan you chose, major commands/scripts run, notable errors, fixes, and final self-checks.
+
+`submit/agent_transcript.md` should preserve the useful transcript of your work session. Include
+observable actions, commands, outputs, failures, revisions, and checks. Do not include hidden or
+private chain-of-thought; summarize decisions rather than exposing private reasoning.
+
 ## Important
 
 Do not submit only a plan or explanation. The benchmark is scored on the produced artifacts.
 
 Do not intentionally game superficial checks such as output existence, duration, or black-frame padding. Preserve task-relevant content and follow the task-specific prompt.
-

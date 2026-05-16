@@ -59,6 +59,8 @@ Requirements:
 - Do not add external footage, unrelated music, synthetic narration, or generated visuals.
 - Write `submit/edit_decision.json` with source ranges, output ranges, crop decisions, caption
   text/timing, audio adjustments, and measured self-checks.
+- Write `submit/run_history.md` and `submit/agent_transcript.md` with your action log and
+  observable work transcript/summary.
 """
 
 
@@ -75,6 +77,8 @@ The clip has multiple technical defects:
 Create:
 - `submit/output.mp4`
 - `submit/edit_decision.json`
+- `submit/run_history.md`
+- `submit/agent_transcript.md`
 
 Requirements:
 1. Repair A/V sync locally. Do not assume a single global audio offset is enough.
@@ -88,6 +92,8 @@ Requirements:
 7. Do not add external footage, synthetic speech, unrelated music, large overlays, or face-covering text.
 8. Write `submit/edit_decision.json` with segment cuts, estimated local audio shifts, removed damage
    ranges, filters used, and measured self-checks.
+9. Write `submit/run_history.md` and `submit/agent_transcript.md` with your action log and
+   observable work transcript/summary.
 """
 
 
@@ -102,6 +108,8 @@ Create:
 - `submit/output.mp4`
 - `submit/captions.srt`
 - `submit/edit_decision.json`
+- `submit/run_history.md`
+- `submit/agent_transcript.md`
 
 Output requirements:
 - 60-75 seconds total duration.
@@ -115,6 +123,9 @@ Output requirements:
 
 In `submit/edit_decision.json`, list kept source segments, removed defects or pauses, audio filters,
 subtitle generation method, caption style, and measured self-checks.
+
+Also write `submit/run_history.md` and `submit/agent_transcript.md` with your action log and
+observable work transcript/summary.
 """
 
 

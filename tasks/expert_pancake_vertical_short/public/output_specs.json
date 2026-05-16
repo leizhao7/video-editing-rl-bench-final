@@ -11,7 +11,9 @@
   "resolution": null,
   "submission_files": [
     "submit/output.mp4",
-    "submit/edit_decision.json"
+    "submit/edit_decision.json",
+    "submit/run_history.md",
+    "submit/agent_transcript.md"
   ],
   "task_id": "expert_pancake_vertical_short"
 }

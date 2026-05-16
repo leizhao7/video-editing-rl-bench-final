@@ -21,6 +21,11 @@ public/
   materials/source.mp4        # generated locally, ignored by git
 ```
 
+Every run should write final artifacts under `submit/`, including `output.mp4`,
+`edit_decision.json`, `run_history.md`, and `agent_transcript.md` (plus task-specific files such as
+`captions.srt` when requested). Raw runner logs are stored separately under the run workspace's
+`_logs/` directory.
+
 Private verifier files live under `private/` and are ignored by git because they may include
 ground truth, private references, ROI annotations, and generated media.
 

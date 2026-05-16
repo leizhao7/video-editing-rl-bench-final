@@ -9,6 +9,8 @@ Create:
 - `submit/output.mp4`
 - `submit/captions.srt`
 - `submit/edit_decision.json`
+- `submit/run_history.md`
+- `submit/agent_transcript.md`
 
 Output requirements:
 - 60-75 seconds total duration.
@@ -22,3 +24,6 @@ Output requirements:
 
 In `submit/edit_decision.json`, list kept source segments, removed defects or pauses, audio filters,
 subtitle generation method, caption style, and measured self-checks.
+
+Also write `submit/run_history.md` and `submit/agent_transcript.md` with your action log and
+observable work transcript/summary.

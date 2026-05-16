@@ -33,10 +33,16 @@ tasks/
     ground_truth.json     # hidden or verifier-only scoring data
     rubric.yaml           # scoring dimensions + hackability notes
 
-submissions/
-  <agent>/<task_id>/
-    output.mp4            # agent-produced artifact
-    run_log.json          # command/session metadata
+runs/
+  <run_id>/workspace/
+    submit/output.mp4              # agent-produced video
+    submit/edit_decision.json      # machine-readable edit record
+    submit/run_history.md          # chronological action log
+    submit/agent_transcript.md     # useful session transcript or transcript summary
+    _logs/runner_command.json      # Docker invocation metadata
+    _logs/runner_result.json       # return code and runtime metadata
+    _logs/docker_stdout_stderr.log # raw runner stdout/stderr
+    _logs/native_sessions/         # copied Codex/Claude native session files when available
 
 reports/
   tasks_and_rubrics.tsv   # generated benchmark table
@@ -118,7 +124,10 @@ output-to-source visual matching, source interval coverage, negative/defect inte
 private clean-reference A/V residuals for the sync task, and private rough-source defect regions for
 the interview task. For the interview task it also runs `faster-whisper` on the output when
 available, caches `_logs/output_asr.json`, and scores token-level semantic anchor recall, anchor
-order, and duplicate n-gram rate.
+order, and duplicate n-gram rate. It also checks that each run saves `submit/run_history.md` and
+`submit/agent_transcript.md`; Docker runs additionally keep raw CLI/runner logs under `_logs/`.
+Codex and Claude Code native session stores are snapshotted before the container exits when their
+standard session directories are present.
 
 LLM-as-judge is optional at verify time because it calls the OpenAI API. Set `OPENAI_API_KEY` and run
 with `--llm-judge`; the default judge model is `gpt-5.5`. If the judge is unavailable, the verifier

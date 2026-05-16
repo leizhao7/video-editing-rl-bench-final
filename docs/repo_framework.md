@@ -144,10 +144,16 @@ Every task should require:
 ```text
 output.mp4
 edit_decision.json
+run_history.md
+agent_transcript.md
 ```
 
 The verifier should primarily grade `output.mp4`. `edit_decision.json` is useful for debugging and
 reward-hacking analysis, but it should not be trusted as proof that the edit was performed.
+`run_history.md` and `agent_transcript.md` are audit artifacts: they should record observable
+commands, errors, revisions, and checks, while avoiding hidden/private chain-of-thought.
+For Docker-driven Codex/Claude runs, also snapshot native session files under
+`_logs/native_sessions/<agent>/` before the ephemeral container exits.
 
 Suggested `edit_decision.json`:
 
@@ -194,7 +200,7 @@ include an anti-hack note.
 
 The repo should not assume all agents can be driven programmatically. Support three modes:
 
-1. `manual`: user runs an agent externally and drops `output.mp4` into `submissions/<agent>/<task>`.
+1. `manual`: user runs an agent externally and drops the `submit/` artifacts into a run workspace.
 2. `shell`: local command template such as `codex exec ...` or `claude ...`.
 3. `recorded`: re-score existing outputs and session logs.
 

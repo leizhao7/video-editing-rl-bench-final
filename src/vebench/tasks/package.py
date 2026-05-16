@@ -77,7 +77,12 @@ def _write_common_files(task: TaskDefinition, *, public: Path, private: Path) ->
             "expected_public_material": "materials/source.mp4",
         },
     )
-    submission_files = ["submit/output.mp4", "submit/edit_decision.json"]
+    submission_files = [
+        "submit/output.mp4",
+        "submit/edit_decision.json",
+        "submit/run_history.md",
+        "submit/agent_transcript.md",
+    ]
     if task.task_id == "rough_interview_caption_cleanup":
         submission_files.insert(1, "submit/captions.srt")
     write_json(

@@ -9,7 +9,7 @@ Prompt:
 
 > Create a polished version of the source clip by removing long pauses and filler-word segments
 > while preserving all substantive speech and keeping audio/video synchronized. Return
-> `output.mp4` and `edit_decision.json`.
+> `output.mp4`, `edit_decision.json`, `run_history.md`, and `agent_transcript.md`.
 
 Source materials:
 
@@ -47,8 +47,8 @@ first pass, probe output, measure silences, revise cuts, export final.
 Prompt:
 
 > The source video has audio/video sync errors. Detect and repair the offset or drift. Preserve the
-> visual content, audio content, resolution, and duration as much as possible. Return `output.mp4`
-> and `edit_decision.json`.
+> visual content, audio content, resolution, and duration as much as possible. Return `output.mp4`,
+> `edit_decision.json`, `run_history.md`, and `agent_transcript.md`.
 
 Source materials:
 
@@ -87,7 +87,8 @@ Prompt:
 
 > Convert the source landscape clip into a 9:16 social video. Keep the primary speaker/object
 > visible and centered through shot changes, preserve the original audio, and add readable subtitles
-> from the provided transcript. Return `output.mp4` and `edit_decision.json`.
+> from the provided transcript. Return `output.mp4`, `edit_decision.json`, `run_history.md`, and
+> `agent_transcript.md`.
 
 Source materials:
 
@@ -120,4 +121,3 @@ Horizon:
 
 Expected 10-18 tool calls: probe, scene detect, sample frames, infer target motion/crops, generate
 crop schedule, style subtitles, render, sample output, adjust margins, final export.
-

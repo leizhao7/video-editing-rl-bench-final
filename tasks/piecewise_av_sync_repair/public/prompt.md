@@ -11,6 +11,8 @@ The clip has multiple technical defects:
 Create:
 - `submit/output.mp4`
 - `submit/edit_decision.json`
+- `submit/run_history.md`
+- `submit/agent_transcript.md`
 
 Requirements:
 1. Repair A/V sync locally. Do not assume a single global audio offset is enough.
@@ -24,3 +26,5 @@ Requirements:
 7. Do not add external footage, synthetic speech, unrelated music, large overlays, or face-covering text.
 8. Write `submit/edit_decision.json` with segment cuts, estimated local audio shifts, removed damage
    ranges, filters used, and measured self-checks.
+9. Write `submit/run_history.md` and `submit/agent_transcript.md` with your action log and
+   observable work transcript/summary.
