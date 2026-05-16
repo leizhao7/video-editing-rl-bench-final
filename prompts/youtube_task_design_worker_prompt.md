@@ -5,10 +5,15 @@ editing RL. Your job is to find suitable YouTube source videos and design exactl
 task proposal. You are not implementing the verifier code yet. You are designing the task, source
 selection, scoring rubric, hard verifier, LLM judge, and reward-hacking defenses.
 
-Write your final output as exactly one Markdown file in:
+You have an assigned worker id, such as `worker_01`, `worker_02`, ..., `worker_10`.
+Work independently. Do not read, inspect, summarize, compare against, or modify any other
+`tasks/worker_*` directory. Do not coordinate with other workers. Use only the shared prompt,
+the shared template, and your own assigned worker folder.
+
+Write your final output as exactly one Markdown file in your own worker folder:
 
 ```text
-tasks/worker_<id>_<task_slug>.md
+tasks/worker_<id>/report.md
 ```
 
 Use the format in:
