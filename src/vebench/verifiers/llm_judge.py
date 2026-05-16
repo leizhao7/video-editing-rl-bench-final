@@ -74,6 +74,20 @@ def openai_json_request(
     api_key: str,
     max_output_tokens: int = 900,
 ) -> dict[str, Any]:
+    base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    api_style = os.environ.get("VEBENCH_LLM_API_STYLE", "").strip().lower()
+    if api_style in {"chat", "chat_completions"} or "openrouter.ai" in base_url:
+        data = _chat_completions_request(
+            model=model,
+            system_text=system_text,
+            user_content=user_content,
+            api_key=api_key,
+            base_url=base_url,
+            max_output_tokens=max_output_tokens,
+        )
+        text = _extract_chat_text(data)
+        return _parse_json_object(text)
+
     payload = {
         "model": model,
         "input": [
@@ -82,14 +96,14 @@ def openai_json_request(
         ],
         "max_output_tokens": max_output_tokens,
     }
-    data = _responses_request(payload, api_key=api_key)
+    data = _responses_request(payload, api_key=api_key, base_url=base_url)
     text = _extract_response_text(data)
     return _parse_json_object(text)
 
 
-def _responses_request(payload: dict[str, Any], *, api_key: str) -> dict[str, Any]:
+def _responses_request(payload: dict[str, Any], *, api_key: str, base_url: str) -> dict[str, Any]:
     request = urllib.request.Request(
-        "https://api.openai.com/v1/responses",
+        f"{base_url}/responses",
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
@@ -99,6 +113,64 @@ def _responses_request(payload: dict[str, Any], *, api_key: str) -> dict[str, An
     )
     with urllib.request.urlopen(request, timeout=120) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _chat_completions_request(
+    *,
+    model: str,
+    system_text: str,
+    user_content: list[dict[str, Any]],
+    api_key: str,
+    base_url: str,
+    max_output_tokens: int,
+) -> dict[str, Any]:
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_text},
+            {"role": "user", "content": _chat_user_content(user_content)},
+        ],
+        "max_tokens": max_output_tokens,
+    }
+    request = urllib.request.Request(
+        f"{base_url}/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": os.environ.get("OPENROUTER_SITE_URL", "https://github.com/leizhao7/video-editing-rl-bench"),
+            "X-Title": os.environ.get("OPENROUTER_APP_NAME", "video-editing-rl-bench"),
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=120) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _chat_user_content(user_content: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    converted: list[dict[str, Any]] = []
+    for item in user_content:
+        kind = item.get("type")
+        if kind == "input_text":
+            converted.append({"type": "text", "text": str(item.get("text", ""))})
+        elif kind == "input_image":
+            converted.append({"type": "image_url", "image_url": {"url": str(item.get("image_url", ""))}})
+    return converted
+
+
+def _extract_chat_text(data: dict[str, Any]) -> str:
+    choices = data.get("choices")
+    if isinstance(choices, list) and choices:
+        message = choices[0].get("message", {}) if isinstance(choices[0], dict) else {}
+        content = message.get("content")
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            texts = [item.get("text", "") for item in content if isinstance(item, dict)]
+            text = "\n".join(part for part in texts if part)
+            if text:
+                return text
+    raise ValueError("Chat completion response did not contain message content")
 
 
 def _extract_response_text(data: dict[str, Any]) -> str:
