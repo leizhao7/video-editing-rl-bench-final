@@ -115,7 +115,7 @@ still visible in the submitted vertical crop.
 ```bash
 vebench generate --task all
 vebench prepare --agent codex --task expert_pancake_vertical_short
-vebench run --run-id expert_pancake_vertical_short-codex
+vebench run --run-id expert_pancake_vertical_short-codex --model gpt-5.5
 vebench verify --run-id expert_pancake_vertical_short-codex
 vebench verify --run-id expert_pancake_vertical_short-codex --llm-judge --llm-model gpt-5.5
 vebench report

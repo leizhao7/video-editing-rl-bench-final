@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -18,11 +19,15 @@ def _env_flags(agent: str) -> list[str]:
     return flags
 
 
-def _agent_command(agent: str) -> str:
+def _agent_command(agent: str, *, model: str | None = None) -> str:
     if agent == "codex":
+        model_flag = f" --model {shlex.quote(model)}" if model else ""
         return _logged_agent_command(
             agent="codex",
-            invocation='codex exec --sandbox workspace-write --ask-for-approval never "$(cat prompt.md)"',
+            invocation=(
+                f"codex exec{model_flag} --skip-git-repo-check "
+                '--dangerously-bypass-approvals-and-sandbox "$(cat prompt.md)"'
+            ),
             log_path="_logs/codex.log",
         )
     if agent == "claude":
@@ -146,11 +151,13 @@ def run_in_docker(
     cpus: str = "8",
     memory: str = "16g",
     network: str = "bridge",
+    model: str | None = None,
 ) -> int:
     workspace = workspace.resolve()
     logs_dir = workspace / "_logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
     agent_home = _agent_home(agent)
+    selected_model = model or _default_model(agent)
     cmd = [
         "docker",
         "run",
@@ -171,7 +178,7 @@ def run_in_docker(
         image,
         "bash",
         "-lc",
-        _agent_command(agent),
+        _agent_command(agent, model=selected_model),
     ]
     started_at = _utc_now()
     start_time = time.monotonic()
@@ -185,6 +192,7 @@ def run_in_docker(
             "network": network,
             "workspace": str(workspace),
             "agent_home": str(agent_home),
+            "model": selected_model,
             "started_at": started_at,
             "docker_command": cmd,
         },
@@ -235,3 +243,11 @@ def _agent_home(agent: str) -> Path:
     home = root / agent
     home.mkdir(parents=True, exist_ok=True)
     return home.resolve()
+
+
+def _default_model(agent: str) -> str | None:
+    if agent == "codex":
+        return os.environ.get("VEBENCH_CODEX_MODEL")
+    if agent == "claude":
+        return os.environ.get("VEBENCH_CLAUDE_MODEL")
+    return None
