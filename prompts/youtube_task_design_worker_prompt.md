@@ -121,18 +121,28 @@ only if it can be executed and verified with the CPU-first environment above.
 Example real-world task patterns:
 
 - Clean up a podcast/interview clip by removing long pauses, filler words, repeated phrases, or dead air.
-- Repair A/V sync in a clip where speech, claps, impacts, or visible gestures reveal the offset.
 - Reformat a landscape clip into a 9:16 social video while preserving the main subject.
 - Make a 30-60s scene-aware highlight montage from a longer vlog, tutorial, demo, travel, sports, or event clip.
 - Align, repair, or burn in subtitles for a short social or educational clip.
 - Clean noisy speech audio, normalize loudness, and remove dead air without damaging content.
 - Combine 2-3 related clips into a coherent short edit with a beginning, middle, and end.
-- Extract action moments from sports, fitness, cooking, crafting, gaming, or performance footage.
-- Turn a longer tutorial/product explanation into a concise instructional short.
+- Extract action moments from sports, fitness, dance, gaming, performance, or event footage.
+- Turn a longer product/event/explainer video into a concise short where the main challenge is not a generic tutorial-to-vertical conversion.
 - Fix format compliance problems such as aspect ratio, black bars, loudness, title card, and export specs.
 
 If you propose a novel task, explicitly explain why it is a real editing need and why it is feasible
 with these tools.
+
+Avoid overlap with already selected benchmark directions:
+
+- Do not propose another cooking/recipe tutorial, pancake task, or "noisy challenge -> extract expert
+  instructional sequence -> vertical recipe short" task. That capability is already covered.
+- Do not propose another piecewise A/V sync repair or damaged-ingest repair task involving local
+  audio offsets, black leader/tail, freeze/dead-air cleanup, or clean-reference residual scoring. That
+  capability is already covered.
+- Avoid generic "horizontal tutorial -> vertical captioned short" tasks unless the main capability is
+  clearly different, such as dynamic action tracking/reframing, multi-source narrative assembly,
+  scene-aware highlight selection, subtitle/timing repair, or format/loudness compliance rescue.
 
 ## YouTube Source Selection Rules
 
