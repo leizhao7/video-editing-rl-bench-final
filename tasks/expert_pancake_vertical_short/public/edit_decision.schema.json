@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "audio_adjustments": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "captions": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "crop_decisions": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "self_checks": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "source_files": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "source_ranges": {
+      "items": {
+        "additionalProperties": true,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "output_end": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "output_start": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "source_end": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "source_start": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "source_start",
+          "source_end"
+        ],
+        "type": "object"
+      },
+      "minItems": 3,
+      "type": "array"
+    },
+    "tools_used": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "source_files",
+    "tools_used",
+    "self_checks",
+    "source_ranges",
+    "captions",
+    "crop_decisions"
+  ],
+  "type": "object"
+}

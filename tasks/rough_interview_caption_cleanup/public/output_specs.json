@@ -1,0 +1,21 @@
+{
+  "aspect": "landscape_16_9",
+  "duration_gate": [
+    60.0,
+    75.0
+  ],
+  "duration_target": [
+    62.0,
+    72.0
+  ],
+  "resolution": [
+    1280,
+    720
+  ],
+  "submission_files": [
+    "submit/output.mp4",
+    "submit/captions.srt",
+    "submit/edit_decision.json"
+  ],
+  "task_id": "rough_interview_caption_cleanup"
+}

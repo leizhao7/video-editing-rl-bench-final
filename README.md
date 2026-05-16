@@ -67,14 +67,41 @@ export VEBENCH_DATA_ROOT=/data/video-agent
 export TMPDIR=/data/video-agent/tmp
 ```
 
+## Implemented Tasks
+
+The first implementation pass wires the three selected task designs into the CLI:
+
+```text
+expert_pancake_vertical_short       # worker 5: expert tutorial extraction from noisy challenge video
+piecewise_av_sync_repair            # worker 7: local A/V sync and damage repair
+rough_interview_caption_cleanup     # worker 13: speech cleanup, captions, and interview polish
+```
+
+Task packages can be generated as metadata-only scaffolds, or with a local source video:
+
+```bash
+vebench generate --task all
+vebench generate --task expert_pancake_vertical_short --source /path/to/pancake_source.mp4 --force
+vebench generate --task piecewise_av_sync_repair --source /path/to/clean_clap_source.mp4 --force
+vebench generate --task rough_interview_caption_cleanup --source /path/to/clean_interview_source.mp4 --force
+```
+
+`--source` should be the downloaded source video for that task. For task 7 and task 13, the
+generator creates the public damaged/rough `materials/source.mp4` and stores private references or
+defect maps under `tasks/<task_id>/private/`.
+
 ## Intended Commands
 
 ```bash
 vebench generate --task all
-vebench run --agent codex --task silence_filler_trim
-vebench verify --agent codex --task silence_filler_trim
+vebench prepare --agent codex --task expert_pancake_vertical_short
+vebench run --run-id expert_pancake_vertical_short-codex
+vebench verify --run-id expert_pancake_vertical_short-codex
 vebench report
 ```
 
-The CLI implementation is intentionally thin in this scaffold; fill in each task package first, then
-wire it into the registry.
+Verifier status: this is a v0 hard-verifier implementation. It enforces media gates, format,
+duration/aspect, non-degenerate audio/video, JSON schema, caption/SRT checks, declared interval
+coverage, and declared local sync repairs. The next implementation step is replacing declared
+interval/sync scoring with private frame/audio fingerprint matching so `edit_decision.json` cannot
+carry source-authenticity credit by itself.

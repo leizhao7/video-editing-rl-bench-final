@@ -1,46 +1,48 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Optional
 
 import typer
 from rich.console import Console
 
 from .agents.docker_runner import run_in_docker
-from .config import default_image, ensure_dir
+from .config import default_image
 from .fs import read_json, write_json
 from .reporting.aggregate import aggregate_scores
 from .runs import prepare_run
-from .verifiers.basic import basic_submission_score
+from .tasks.package import generate_task_package
+from .tasks.registry import task_ids
+from .verifiers.task_specific import score_task_submission
 
 app = typer.Typer(help="Video editing RL mini-benchmark CLI.")
 console = Console()
 
 
 @app.command()
-def generate(task: str = "all", out_dir: Path = Path("tasks")) -> None:
-    """Generate placeholder task package directories."""
-    task_ids = ["silence_filler_trim", "av_sync_repair", "vertical_reframe"] if task == "all" else [task]
-    tools_template = Path("prompts/tools_cpu.md")
-    tools_text = tools_template.read_text() if tools_template.exists() else "# Available Tools\n\n- ffmpeg\n- ffprobe\n- python\n"
-    for task_id in task_ids:
-        public = out_dir / task_id / "public"
-        private = out_dir / task_id / "private"
-        ensure_dir(public / "materials")
-        ensure_dir(private)
-        (public / "prompt.md").write_text(
-            f"# Task: {task_id}\n\n"
-            "Use the provided source materials to create `submit/output.mp4` and "
-            "`submit/edit_decision.json`.\n"
-        )
-        (public / "tools.md").write_text(tools_text.rstrip() + "\n")
-        (private / "ground_truth.json").write_text("{\n  \"todo\": true\n}\n")
-        (private / "rubric.yaml").write_text("todo: true\n")
-        console.print(f"[green]created[/green] {public}")
+def generate(
+    task: str = "all",
+    out_dir: Path = Path("tasks"),
+    source: Optional[Path] = typer.Option(None, "--source", help="Optional local source video to package."),
+    force: bool = typer.Option(False, "--force", help="Overwrite the generated task directory."),
+) -> None:
+    """Generate task5/task7/task13 public/private task packages."""
+    selected = task_ids() if task == "all" else [task]
+    if source is not None and task == "all":
+        console.print("[yellow]--source applies to one task at a time; writing metadata-only packages for all tasks.[/yellow]")
+        source = None
+    for task_id in selected:
+        task_root = generate_task_package(task_id=task_id, out_dir=out_dir, source=source, force=force)
+        public_source = task_root / "public" / "materials" / "source.mp4"
+        suffix = "with source.mp4" if public_source.exists() else "metadata only; add --source to create materials/source.mp4"
+        console.print(f"[green]created[/green] {task_root} ({suffix})")
 
 
 @app.command()
 def prepare(
     agent: str = typer.Option(..., "--agent"),
     task: str = typer.Option(..., "--task"),
-    run_id: str | None = None,
+    run_id: Optional[str] = None,
     repo: Path = Path("."),
     runs_dir: Path = Path("runs"),
 ) -> None:
@@ -52,7 +54,7 @@ def prepare(
 @app.command()
 def run(
     run_id: str = typer.Option(..., "--run-id"),
-    agent: str | None = None,
+    agent: Optional[str] = None,
     runs_dir: Path = Path("runs"),
     image: str = default_image(),
     cpus: str = "8",
@@ -78,15 +80,20 @@ def run(
 
 
 @app.command()
-def verify(run_id: str = typer.Option(..., "--run-id"), runs_dir: Path = Path("runs")) -> None:
-    """Score one run with the basic verifier placeholder."""
+def verify(
+    run_id: str = typer.Option(..., "--run-id"),
+    runs_dir: Path = Path("runs"),
+    repo: Path = Path("."),
+) -> None:
+    """Score one run with the task-specific verifier."""
     run_root = runs_dir / run_id
     record = read_json(run_root / "run.json")
-    score = basic_submission_score(
+    score = score_task_submission(
         run_id=record["run_id"],
         task_id=record["task_id"],
         agent=record["agent"],
         workspace=Path(record["workspace"]),
+        repo=repo,
     )
     write_json(run_root / "score.json", score.model_dump(mode="json"))
     console.print(score.model_dump_json(indent=2))

@@ -1,0 +1,17 @@
+{
+  "aspect": "portrait_9_16",
+  "duration_gate": [
+    50.0,
+    70.0
+  ],
+  "duration_target": [
+    55.0,
+    65.0
+  ],
+  "resolution": null,
+  "submission_files": [
+    "submit/output.mp4",
+    "submit/edit_decision.json"
+  ],
+  "task_id": "expert_pancake_vertical_short"
+}

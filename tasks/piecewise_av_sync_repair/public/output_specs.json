@@ -1,0 +1,20 @@
+{
+  "aspect": "landscape_16_9",
+  "duration_gate": [
+    88.0,
+    98.0
+  ],
+  "duration_target": [
+    90.0,
+    96.0
+  ],
+  "resolution": [
+    1280,
+    720
+  ],
+  "submission_files": [
+    "submit/output.mp4",
+    "submit/edit_decision.json"
+  ],
+  "task_id": "piecewise_av_sync_repair"
+}
