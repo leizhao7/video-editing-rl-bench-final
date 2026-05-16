@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local secrets
+.env
+*.pem
+*.key
+
+# Generated benchmark data and agent artifacts
+runs/
+submissions/
+reports/*.tsv
+reports/*.json
+reports/*.csv
+data/raw/
+data/generated/
+tasks/*/public/materials/
+tasks/*/private/
+
+# Media artifacts
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.wav
+*.mp3
+*.aac
+*.flac
+*.srt
+*.ass
+
+# Reports/build products
+report/*.pdf
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+

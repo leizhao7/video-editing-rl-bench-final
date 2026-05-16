@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-editing-rl-bench"
+version = "0.1.0"
+description = "Mini-benchmark scaffold for long-horizon video-editing agent tasks"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy",
+  "scipy",
+  "opencv-python-headless",
+  "moviepy",
+  "av",
+  "librosa",
+  "soundfile",
+  "pydub",
+  "scenedetect",
+  "Pillow",
+  "scikit-image",
+  "pandas",
+  "pydantic>=2",
+  "tqdm",
+  "colour-science",
+  "noisereduce",
+  "imageio",
+  "imageio-ffmpeg",
+  "matplotlib",
+  "jsonschema",
+  "typer",
+  "rich",
+  "PyYAML",
+  "python-dotenv"
+]
+
+[project.scripts]
+vebench = "vebench.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
