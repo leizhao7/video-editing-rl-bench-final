@@ -1,32 +1,28 @@
-# Task Proposal Workspace
+# Benchmark Tasks
 
-This folder is for task-design proposals created by worker agents.
-
-Each worker gets an isolated subfolder:
+This folder contains only the formal benchmark task packages used by `vebench`.
 
 ```text
-tasks/worker_01/
-tasks/worker_02/
-...
-tasks/worker_10/
+tasks/
+  expert_pancake_vertical_short/
+  piecewise_av_sync_repair/
+  rough_interview_caption_cleanup/
 ```
 
-Each worker must write exactly one Markdown report inside its own folder:
+Each task has a public package copied into agent workspaces:
 
 ```text
-tasks/worker_<id>/report.md
+public/
+  prompt.md
+  tools.md
+  source_metadata.json
+  output_specs.json
+  edit_decision.schema.json
+  materials/source.mp4        # generated locally, ignored by git
 ```
 
-Example:
+Private verifier files live under `private/` and are ignored by git because they may include
+ground truth, private references, ROI annotations, and generated media.
 
-```text
-tasks/worker_03/report.md
-```
-
-The Markdown file must follow `TASK_PROPOSAL_TEMPLATE.md`. Workers should not read, summarize,
-compare against, or modify any sibling `tasks/worker_*` directory. Each worker should work
-independently from the shared prompt, template, and available tool list only.
-
-Do not commit downloaded YouTube videos, derived media, temporary frames, model outputs, or
-large artifacts into this folder. The proposal should contain YouTube URLs, clip time ranges,
-metadata, task design, verifier design, reward dimensions, and anti-hacking analysis.
+Worker proposal folders and selection notes are intentionally not kept here; the benchmark repo
+should expose the final runnable tasks rather than the task-design scratch space.
