@@ -4,13 +4,32 @@
 
 - Worker ID:
 - Task slug:
-- Task family:
+- Real-world editing scenario:
 - Proposed difficulty: easy / medium / hard
 - Expected semantic steps:
 - Expected agent runtime:
 - Primary editing capabilities tested:
 
-## 2. YouTube Source Videos
+## 2. Environment Fit Check
+
+Before choosing the task, explain why it fits the available CPU-first tool environment.
+
+| Requirement | Is it supported by the available tools? | Tool/package to use | Notes or simplification |
+| --- | --- | --- | --- |
+| Required media transform |  |  |  |
+| Required audio analysis |  |  |  |
+| Required visual/frame analysis |  |  |  |
+| Required transcript/subtitle work |  |  |  |
+| Required verifier signal |  |  |  |
+| Requires GPU/out-of-scope model? |  |  |  |
+
+Conclusion:
+
+```text
+This task is feasible / risky / not feasible because...
+```
+
+## 3. YouTube Source Videos
 
 List at least 3 candidate videos and select 1 primary source.
 
@@ -37,7 +56,7 @@ Required provenance fields for the primary source:
 }
 ```
 
-## 3. Task Prompt Draft
+## 4. Task Prompt Draft
 
 Write the user-facing task prompt that the editing agent would receive.
 
@@ -45,9 +64,11 @@ Write the user-facing task prompt that the editing agent would receive.
 
 ```
 
-## 4. Long-Horizon Step Plan
+## 5. Long-Horizon Step Plan
 
-Break the task into 8-15 semantic steps. Count editing decisions, not shell commands.
+Break the task into 8-15 semantic steps; 10-14 is the ideal band. Count editing decisions, not
+shell commands. If fewer than 8 steps, the task is probably too shallow. If more than 15 steps,
+explain why the extra complexity is necessary.
 
 | Step | Required decision/action | Expected tools/libraries | Observable output |
 | --- | --- | --- | --- |
@@ -60,7 +81,7 @@ Break the task into 8-15 semantic steps. Count editing decisions, not shell comm
 | 7 |  |  |  |
 | 8 |  |  |  |
 
-## 5. Capabilities Tested
+## 6. Capabilities Tested
 
 Explain which capabilities this task evaluates and why the selected source video makes them non-trivial.
 
@@ -72,7 +93,7 @@ Explain which capabilities this task evaluates and why the selected source video
 - Self-check/iteration:
 - Optional semantic judgment:
 
-## 6. Public Materials
+## 7. Public Materials
 
 List the files the agent should see.
 
@@ -86,7 +107,7 @@ materials/
 Add any proposed public sidecars, such as transcript snippets, style notes, target duration, or
 allowed output formats.
 
-## 7. Hidden Ground Truth / Private Materials
+## 8. Hidden Ground Truth / Private Materials
 
 List private files used by the verifier only.
 
@@ -98,12 +119,12 @@ private/
 
 Explain what each private field stores and how it will be generated.
 
-## 8. Hard Verifier Design
+## 9. Hard Verifier Design
 
 Hard verifier should validate objective properties from the final output video, not trust the
 agent's edit log.
 
-### 8.1 Mandatory Gates
+### 9.1 Mandatory Gates
 
 | Gate | Method | Failure behavior |
 | --- | --- | --- |
@@ -116,7 +137,7 @@ agent's edit log.
 | Non-silent/non-clipped audio |  |  |
 | edit_decision.json schema valid |  |  |
 
-### 8.2 Dense Hard Rewards
+### 9.2 Dense Hard Rewards
 
 Weights should sum to 1.0 inside the hard verifier section.
 
@@ -127,12 +148,12 @@ Weights should sum to 1.0 inside the hard verifier section.
 | hard_3 |  |  |  |  |  |  |  |  |
 | hard_4 |  |  |  |  |  |  |  |  |
 
-## 9. LLM Judge Design
+## 10. LLM Judge Design
 
 LLM judge should only evaluate semantic or aesthetic properties that hard metrics cannot measure
 reliably.
 
-### 9.1 Evidence Pack
+### 10.1 Evidence Pack
 
 Describe exactly what compact evidence is shown to the judge.
 
@@ -144,7 +165,7 @@ Describe exactly what compact evidence is shown to the judge.
 - Hard verifier summary:
 - Short before/after clips, if needed:
 
-### 9.2 Judge Rubric
+### 10.2 Judge Rubric
 
 Weights should sum to 1.0 inside the LLM judge section.
 
@@ -166,7 +187,7 @@ Expected structured output:
 }
 ```
 
-## 10. Final Score Formula
+## 11. Final Score Formula
 
 Specify the score formula.
 
@@ -185,7 +206,7 @@ llm_weight = 0.20
 metadata_weight = 0.10
 ```
 
-## 11. Reward Hacking Analysis
+## 12. Reward Hacking Analysis
 
 List at least 5 plausible cheating or degenerate strategies and how the verifier catches them.
 
@@ -197,7 +218,7 @@ List at least 5 plausible cheating or degenerate strategies and how the verifier
 |  |  |  |
 |  |  |  |
 
-## 12. Implementation Feasibility
+## 13. Implementation Feasibility
 
 Explain how this can be implemented with the CPU-first environment.
 
@@ -207,8 +228,7 @@ Explain how this can be implemented with the CPU-first environment.
 - Biggest implementation risk:
 - Suggested simplification if too hard:
 
-## 13. Why This Is Good for Long-Horizon RL
+## 14. Why This Is Good for Long-Horizon RL
 
 Explain why the task requires planning, intermediate inspection, iterative correction, and
 multi-step tool use rather than one simple command.
-

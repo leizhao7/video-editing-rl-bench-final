@@ -25,7 +25,9 @@ self-check the result, and revise. It should not be solvable by one trivial ffmp
 
 Design for:
 
-- 8-15 semantic steps per task. Count meaningful editing decisions, not command count.
+- 8-15 semantic steps per task; 10-14 is the ideal band for this first benchmark.
+- Count meaningful editing decisions, not command count. Do not count `ffmpeg` invocations as
+  separate steps unless they reflect a distinct editing decision.
 - 1-3 source videos per task, with one primary YouTube source and backups.
 - 4-6 hard verifier dimensions.
 - 2-4 LLM judge dimensions.
@@ -85,6 +87,13 @@ Useful capabilities this environment can support:
 - Basic denoise/loudness normalization.
 - Verifier reports in JSON/TSV.
 
+Before proposing the task, first reason about the tool boundary:
+
+- What can these packages objectively measure or transform?
+- Which parts of the proposed task can be verified with deterministic code?
+- Which parts would require an LLM judge?
+- Which parts are outside the environment and should be removed or simplified?
+
 Avoid requiring these unless the task can be judged through API calls or simplified proxies:
 
 - True object removal / video inpainting.
@@ -95,22 +104,30 @@ Avoid requiring these unless the task can be judged through API calls or simplif
 - Reference-based cinematic grading.
 - Complex motion graphics.
 
-## Preferred Task Families
+## Realistic Task Discovery
 
-Pick one task family, or propose a closely related one. If a coordinator gave you a specific worker
-ID or focus area, follow that assignment. Otherwise choose a less obvious family to reduce duplicate
-proposals across workers.
+Do not treat the list below as a required menu. These are examples of realistic editing jobs, not
+categories you must force your task into. Your priority is to design a task that a real creator,
+editor, social-media operator, podcast producer, educator, or marketing team might actually ask for.
 
-1. Talking-head clean cut: remove long pauses, filler words, repeated phrases, or dead air.
-2. A/V sync repair: fix known offset or mild drift introduced into a YouTube clip.
-3. Vertical reframe: convert landscape to 9:16 while keeping the subject visible.
-4. Scene-aware highlight montage: make a 30-60s montage from a longer clip.
-5. Subtitle repair/burn-in: align, style, and burn captions for a short social clip.
-6. Audio cleanup: reduce noise, normalize loudness, remove dead air while preserving speech.
-7. Multi-source mini edit: combine 2-3 related clips into a coherent short sequence.
-8. Sports/action moment extraction: detect and preserve visually/audio salient moments.
-9. Tutorial/product short-form edit: cut a longer explanation into a concise instructional clip.
-10. Format compliance rescue: fix aspect ratio, black bars, loudness, title card, and export specs.
+You may choose one example, combine ideas, or propose a different realistic task. The task is valid
+only if it can be executed and verified with the CPU-first environment above.
+
+Example real-world task patterns:
+
+- Clean up a podcast/interview clip by removing long pauses, filler words, repeated phrases, or dead air.
+- Repair A/V sync in a clip where speech, claps, impacts, or visible gestures reveal the offset.
+- Reformat a landscape clip into a 9:16 social video while preserving the main subject.
+- Make a 30-60s scene-aware highlight montage from a longer vlog, tutorial, demo, travel, sports, or event clip.
+- Align, repair, or burn in subtitles for a short social or educational clip.
+- Clean noisy speech audio, normalize loudness, and remove dead air without damaging content.
+- Combine 2-3 related clips into a coherent short edit with a beginning, middle, and end.
+- Extract action moments from sports, fitness, cooking, crafting, gaming, or performance footage.
+- Turn a longer tutorial/product explanation into a concise instructional short.
+- Fix format compliance problems such as aspect ratio, black bars, loudness, title card, and export specs.
+
+If you propose a novel task, explicitly explain why it is a real editing need and why it is feasible
+with these tools.
 
 ## YouTube Source Selection Rules
 
@@ -236,19 +253,19 @@ For each hack, explain the detector or penalty.
 Your Markdown proposal must include:
 
 1. Metadata.
-2. YouTube source videos.
-3. Task prompt draft.
-4. Long-horizon step plan.
-5. Capabilities tested.
-6. Public materials.
-7. Hidden ground truth/private materials.
-8. Hard verifier design.
-9. LLM judge design.
-10. Final score formula.
-11. Reward hacking analysis.
-12. Implementation feasibility.
-13. Why this is good for long-horizon RL.
+2. Environment fit check.
+3. YouTube source videos.
+4. Task prompt draft.
+5. Long-horizon step plan.
+6. Capabilities tested.
+7. Public materials.
+8. Hidden ground truth/private materials.
+9. Hard verifier design.
+10. LLM judge design.
+11. Final score formula.
+12. Reward hacking analysis.
+13. Implementation feasibility.
+14. Why this is good for long-horizon RL.
 
 Be concrete. A strong proposal should be specific enough that another engineer can implement the
 task package and verifier without asking you what the task meant.
-
