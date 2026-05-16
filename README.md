@@ -44,6 +44,9 @@ runs/
     _logs/docker_stdout_stderr.log # raw runner stdout/stderr
     _logs/native_sessions/         # copied Codex/Claude native session files when available
 
+Agent CLI credentials and native session stores persist outside the ephemeral Docker container under
+`$VEBENCH_AGENT_HOME_ROOT/<agent>/`, defaulting to `~/.vebench-agent-home/<agent>/` on the host.
+
 reports/
   tasks_and_rubrics.tsv   # generated benchmark table
 

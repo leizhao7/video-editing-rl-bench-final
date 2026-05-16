@@ -150,6 +150,7 @@ def run_in_docker(
     workspace = workspace.resolve()
     logs_dir = workspace / "_logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
+    agent_home = _agent_home(agent)
     cmd = [
         "docker",
         "run",
@@ -162,6 +163,8 @@ def run_in_docker(
         memory,
         "-v",
         f"{workspace}:/workspace",
+        "-v",
+        f"{agent_home}:/agent-home",
         "-w",
         "/workspace",
         *_env_flags(agent),
@@ -181,6 +184,7 @@ def run_in_docker(
             "memory": memory,
             "network": network,
             "workspace": str(workspace),
+            "agent_home": str(agent_home),
             "started_at": started_at,
             "docker_command": cmd,
         },
@@ -224,3 +228,10 @@ def run_in_docker(
             },
         )
     return returncode
+
+
+def _agent_home(agent: str) -> Path:
+    root = Path(os.environ.get("VEBENCH_AGENT_HOME_ROOT", Path.home() / ".vebench-agent-home"))
+    home = root / agent
+    home.mkdir(parents=True, exist_ok=True)
+    return home.resolve()

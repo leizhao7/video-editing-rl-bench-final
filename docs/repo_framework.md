@@ -154,6 +154,9 @@ reward-hacking analysis, but it should not be trusted as proof that the edit was
 commands, errors, revisions, and checks, while avoiding hidden/private chain-of-thought.
 For Docker-driven Codex/Claude runs, also snapshot native session files under
 `_logs/native_sessions/<agent>/` before the ephemeral container exits.
+The Docker runner should mount a persistent host directory such as
+`~/.vebench-agent-home/<agent>/` to `/agent-home` so account logins and CLI session stores survive
+between runs.
 
 Suggested `edit_decision.json`:
 
