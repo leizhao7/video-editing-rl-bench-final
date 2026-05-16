@@ -41,32 +41,19 @@ def maybe_run_llm_judge(
         user_content.append({"type": "input_text", "text": "Output contact sheet:"})
         user_content.append({"type": "input_image", "image_url": f"data:image/jpeg;base64,{output_sheet}"})
 
-    payload = {
-        "model": selected_model,
-        "input": [
-            {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": (
-                            "You are a strict video-editing benchmark judge. "
-                            "Score only the submitted output against the task rubric. "
-                            "Do not reward claims in edit_decision.json unless supported by hard metrics or visible evidence. "
-                            "Return compact JSON only."
-                        ),
-                    }
-                ],
-            },
-            {"role": "user", "content": user_content},
-        ],
-        "max_output_tokens": 900,
-    }
-
     try:
-        data = _responses_request(payload, api_key=api_key)
-        text = _extract_response_text(data)
-        parsed = _parse_json_object(text)
+        parsed = openai_json_request(
+            model=selected_model,
+            system_text=(
+                "You are a strict video-editing benchmark judge. "
+                "Score only the submitted output against the task rubric. "
+                "Do not reward claims in edit_decision.json unless supported by hard metrics or visible evidence. "
+                "Return compact JSON only."
+            ),
+            user_content=user_content,
+            api_key=api_key,
+            max_output_tokens=900,
+        )
     except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
         return {"llm_judge_available": 0.0, "llm_overall": 0.0}, [f"LLM judge failed: {exc}"], {}
 
@@ -77,6 +64,27 @@ def maybe_run_llm_judge(
     if parsed.get("major_failures"):
         scores["llm_major_failure_count"] = float(len(parsed["major_failures"]))
     return scores, [f"LLM judge ran with model {selected_model}."], parsed
+
+
+def openai_json_request(
+    *,
+    model: str,
+    system_text: str,
+    user_content: list[dict[str, Any]],
+    api_key: str,
+    max_output_tokens: int = 900,
+) -> dict[str, Any]:
+    payload = {
+        "model": model,
+        "input": [
+            {"role": "system", "content": [{"type": "input_text", "text": system_text}]},
+            {"role": "user", "content": user_content},
+        ],
+        "max_output_tokens": max_output_tokens,
+    }
+    data = _responses_request(payload, api_key=api_key)
+    text = _extract_response_text(data)
+    return _parse_json_object(text)
 
 
 def _responses_request(payload: dict[str, Any], *, api_key: str) -> dict[str, Any]:

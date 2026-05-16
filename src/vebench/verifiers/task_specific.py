@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+import re
 
 from ..media.audio import audio_quality_score, audio_stats
 from ..media.captions import burned_caption_visibility_score
@@ -14,6 +15,8 @@ from ..media.matching import (
     timeline_diversity,
     timeline_monotonicity,
 )
+from ..media.roi import roi_visibility_score
+from ..media.transcribe import transcribe_video
 from ..media.video import video_integrity_score, video_stats
 from ..schema import ScoreRecord
 from ..tasks.registry import get_task_definition
@@ -57,7 +60,7 @@ def score_task_submission(
     schema = load_json_if_exists(workspace / "edit_decision.schema.json") or task.edit_decision_schema
 
     if task_id == "expert_pancake_vertical_short":
-        return _score_pancake(run_id, task_id, agent, workspace, ground_truth, config, schema, llm_judge, llm_model)
+        return _score_pancake(run_id, task_id, agent, workspace, repo, ground_truth, config, schema, llm_judge, llm_model)
     if task_id == "piecewise_av_sync_repair":
         return _score_piecewise_sync(run_id, task_id, agent, workspace, repo, ground_truth, config, schema, llm_judge, llm_model)
     if task_id == "rough_interview_caption_cleanup":
@@ -179,6 +182,7 @@ def _score_pancake(
     task_id: str,
     agent: str,
     workspace: Path,
+    repo: Path,
     ground_truth: dict[str, Any],
     config: dict[str, Any],
     schema: dict[str, Any],
@@ -233,12 +237,25 @@ def _score_pancake(
     cue_times = _caption_cue_times(edit)
     caption_visibility = burned_caption_visibility_score(output, cue_times)
     border_score = 1.0 - float(context.get("video_stats", {}).get("border_black_fraction", 0.0))
+    roi_annotations = load_json_if_exists(repo / "tasks" / task_id / "private" / "roi_keyframes.json")
+    if roi_annotations:
+        roi_score, roi_details = roi_visibility_score(
+            source=source,
+            output=output,
+            matches=matches,
+            roi_annotations=roi_annotations,
+        )
+        scores.update(roi_details)
+    else:
+        roi_score = min(scores.get("video_integrity", 0.0), border_score)
+        notes.append("private roi_keyframes.json not found; using visual integrity/border fallback for ROI containment")
+    scores["roi_containment_score"] = roi_score
     scores["caption_visibility"] = caption_visibility
     scores["hard_5_vertical_roi_caption"] = clamp01(
-        0.25 * min(1.0, caption_count / 5.0)
-        + 0.25 * caption_keyword_score
-        + 0.25 * caption_visibility
-        + 0.25 * min(scores.get("video_integrity", 0.0), border_score)
+        0.20 * min(1.0, caption_count / 5.0)
+        + 0.20 * caption_keyword_score
+        + 0.20 * caption_visibility
+        + 0.40 * roi_score
     )
 
     scores["hard_1_format_duration"] = _format_score(scores)
@@ -373,15 +390,21 @@ def _score_interview(
 
     srt_entries = parse_srt(workspace / "submit" / "captions.srt")
     srt_body = srt_text(srt_entries)
-    combined_text = f"{srt_body} {_caption_text(edit)} {edit}".lower()
-    anchor_hits = []
-    for anchor in ground_truth["semantic_anchors"]:
-        anchor_hits.append(1.0 if any(str(phrase).lower() in combined_text for phrase in anchor["phrases"]) else 0.0)
-    scores["semantic_anchor_recall"] = sum(anchor_hits) / max(1, len(anchor_hits))
+    asr_data, asr_notes = transcribe_video(output, cache_path=workspace / "_logs" / "output_asr.json")
+    notes.extend(asr_notes)
+    asr_text = str(asr_data.get("text", "")) if asr_data else ""
+    scores["asr_available"] = 1.0 if asr_data else 0.0
+    combined_text = f"{asr_text} {srt_body} {_caption_text(edit)}".lower()
+    tokens = _tokens(combined_text)
+    semantic_scores = _semantic_anchor_scores(ground_truth["semantic_anchors"], combined_text)
+    scores.update(semantic_scores)
+    scores["duplicate_ngram_rate"] = _duplicate_ngram_rate(tokens, n=3)
     scores["speech_cleanup_semantic_preservation"] = clamp01(
-        0.40 * scores["inserted_pause_removed_ratio"]
-        + 0.25 * scores["repeat_loop_suppression"]
-        + 0.35 * scores["semantic_anchor_recall"]
+        0.30 * scores["inserted_pause_removed_ratio"]
+        + 0.20 * scores["repeat_loop_suppression"]
+        + 0.30 * scores["semantic_anchor_recall"]
+        + 0.10 * scores["semantic_anchor_order"]
+        + 0.10 * (1.0 - scores["duplicate_ngram_rate"])
     )
 
     scores["srt_valid"] = 1.0 if srt_entries else 0.0
@@ -472,6 +495,53 @@ def _edit_media_consistency_score(ranges: list[tuple[float, float]], matches: li
         if any(start <= match.source_time <= end for start, end in ranges):
             hits += 1
     return clamp01(hits / max(1, len(matches)))
+
+
+def _semantic_anchor_scores(anchors: list[dict[str, Any]], text: str) -> dict[str, float]:
+    if not anchors:
+        return {
+            "semantic_anchor_recall": 0.0,
+            "semantic_anchor_order": 0.0,
+            "semantic_anchor_diversity": 0.0,
+        }
+    lowered = text.lower()
+    hits = 0
+    positions: list[int] = []
+    for anchor in anchors:
+        phrase_positions = [
+            lowered.find(str(phrase).lower())
+            for phrase in anchor.get("phrases", anchor.get("required_phrases", []))
+            if str(phrase).strip()
+        ]
+        phrase_positions = [position for position in phrase_positions if position >= 0]
+        if phrase_positions:
+            hits += 1
+            positions.append(min(phrase_positions))
+    recall = hits / len(anchors)
+    if len(positions) < 2:
+        order = 1.0 if positions else 0.0
+    else:
+        inversions = sum(1 for left, right in zip(positions, positions[1:]) if right < left)
+        order = 1.0 - inversions / max(1, len(positions) - 1)
+    return {
+        "semantic_anchor_recall": clamp01(recall),
+        "semantic_anchor_order": clamp01(order),
+        "semantic_anchor_diversity": clamp01(hits / len(anchors)),
+    }
+
+
+def _tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9']+", text.lower())
+
+
+def _duplicate_ngram_rate(tokens: list[str], *, n: int = 3) -> float:
+    if len(tokens) < n * 2:
+        return 0.0
+    ngrams = [tuple(tokens[idx : idx + n]) for idx in range(len(tokens) - n + 1)]
+    if not ngrams:
+        return 0.0
+    unique = len(set(ngrams))
+    return clamp01(1.0 - unique / len(ngrams))
 
 
 def _interview_defect_public_intervals(*, repo: Path, task_id: str, ground_truth: dict[str, Any]) -> list[dict[str, Any]]:

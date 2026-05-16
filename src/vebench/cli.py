@@ -13,6 +13,7 @@ from .reporting.aggregate import aggregate_scores
 from .runs import prepare_run
 from .tasks.package import generate_task_package
 from .tasks.registry import task_ids
+from .tasks.roi_annotation import annotate_task_rois
 from .verifiers.task_specific import score_task_submission
 
 app = typer.Typer(help="Video editing RL mini-benchmark CLI.")
@@ -49,6 +50,18 @@ def prepare(
     """Create a sandbox workspace for one agent/task run."""
     record = prepare_run(repo=repo, runs_dir=runs_dir, task_id=task, agent=agent, run_id=run_id)
     console.print(record.model_dump_json(indent=2))
+
+
+@app.command()
+def annotate_roi(
+    task: str = typer.Option("expert_pancake_vertical_short", "--task"),
+    repo: Path = Path("."),
+    model: str = typer.Option("gpt-5.5", "--model", help="OpenAI vision-capable model for ROI annotation."),
+    frames_per_step: int = typer.Option(3, "--frames-per-step", min=1, max=8),
+) -> None:
+    """Create private LLM/VLM ROI annotations for crop containment scoring."""
+    path = annotate_task_rois(repo=repo, task_id=task, model=model, frames_per_step=frames_per_step)
+    console.print(f"[green]wrote[/green] {path}")
 
 
 @app.command()

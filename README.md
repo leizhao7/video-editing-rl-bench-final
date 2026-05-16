@@ -90,6 +90,17 @@ vebench generate --task rough_interview_caption_cleanup --source /path/to/clean_
 generator creates the public damaged/rough `materials/source.mp4` and stores private references or
 defect maps under `tasks/<task_id>/private/`.
 
+For task 5, generate private ROI annotations after packaging the real source:
+
+```bash
+export OPENAI_API_KEY=...
+vebench annotate-roi --task expert_pancake_vertical_short --model gpt-5.5 --frames-per-step 3
+```
+
+This writes `tasks/expert_pancake_vertical_short/private/roi_keyframes.json`. The verifier then
+checks whether LLM-annotated source ROIs such as pancake, pan, hand, spatula, and plated result are
+still visible in the submitted vertical crop.
+
 ## Intended Commands
 
 ```bash
@@ -105,13 +116,16 @@ Verifier status: this is a v1 hard-verifier implementation. It enforces media ga
 duration/aspect, non-degenerate audio/video, JSON schema, SRT/caption checks, crop-aware
 output-to-source visual matching, source interval coverage, negative/defect interval leakage,
 private clean-reference A/V residuals for the sync task, and private rough-source defect regions for
-the interview task.
+the interview task. For the interview task it also runs `faster-whisper` on the output when
+available, caches `_logs/output_asr.json`, and scores token-level semantic anchor recall, anchor
+order, and duplicate n-gram rate.
 
 LLM-as-judge is optional at verify time because it calls the OpenAI API. Set `OPENAI_API_KEY` and run
 with `--llm-judge`; the default judge model is `gpt-5.5`. If the judge is unavailable, the verifier
 keeps the hard-verifier score and records a note. When enabled, the LLM score contributes 20% as a
 tiebreaker and cannot override failed hard gates.
 
-Known verifier limitations: ROI containment is still heuristic unless private ROI annotations are
-added, source matching is CPU feature matching rather than a learned video retrieval model, and task
-13 semantic preservation is strongest when LLM judge or ASR evidence is enabled.
+Known verifier limitations: ROI containment becomes much stronger after running `annotate-roi`, but
+the private boxes are still LLM/VLM-generated labels rather than human labels. Source matching is CPU
+feature matching rather than a learned video retrieval model, so thresholds should be calibrated on
+the real YouTube packages.

@@ -104,3 +104,33 @@ def contact_sheet_base64(video: Path, *, frames: int = 8, width: int = 960) -> s
     with tempfile.NamedTemporaryFile(suffix=".jpg") as tmp:
         sheet.save(tmp.name, "JPEG", quality=80)
         return base64.b64encode(Path(tmp.name).read_bytes()).decode("ascii")
+
+
+def frame_base64(video: Path, *, time_sec: float, max_width: int = 960) -> tuple[str, int, int] | None:
+    try:
+        import cv2
+        from PIL import Image, ImageDraw
+    except ModuleNotFoundError:
+        return None
+
+    cap = cv2.VideoCapture(str(video))
+    if not cap.isOpened():
+        return None
+    cap.set(cv2.CAP_PROP_POS_MSEC, time_sec * 1000.0)
+    ok, frame = cap.read()
+    cap.release()
+    if not ok:
+        return None
+
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    original_h, original_w = frame.shape[:2]
+    image = Image.fromarray(frame)
+    if image.width > max_width:
+        ratio = max_width / image.width
+        image = image.resize((max_width, int(image.height * ratio)))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((0, 0, 92, 20), fill=(0, 0, 0))
+    draw.text((4, 4), f"{time_sec:.2f}s", fill=(255, 255, 255))
+    with tempfile.NamedTemporaryFile(suffix=".jpg") as tmp:
+        image.save(tmp.name, "JPEG", quality=85)
+        return base64.b64encode(Path(tmp.name).read_bytes()).decode("ascii"), original_w, original_h
