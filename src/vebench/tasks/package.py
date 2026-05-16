@@ -188,7 +188,10 @@ def _generate_rough_interview_source(task: TaskDefinition, *, source: Path, publ
     with tempfile.TemporaryDirectory(prefix="vebench_interview_") as tmp_name:
         tmp = Path(tmp_name)
         parts: list[Path] = []
+        timeline: list[dict[str, float | str]] = []
+        defect_public_intervals: list[dict[str, float | str]] = []
         cursor = 0.0
+        public_cursor = 0.0
         part_index = 0
         for _, event_type, event in events:
             if event_type == "dead_air":
@@ -197,6 +200,16 @@ def _generate_rough_interview_source(task: TaskDefinition, *, source: Path, publ
                     out = tmp / f"{part_index:03d}_content.mp4"
                     make_shifted_segment(source=clean, output=out, start_sec=cursor, duration_sec=t - cursor, audio_delay_ms=0)
                     parts.append(out)
+                    timeline.append(
+                        {
+                            "kind": "content",
+                            "public_start": public_cursor,
+                            "public_end": public_cursor + (t - cursor),
+                            "clean_start": cursor,
+                            "clean_end": t,
+                        }
+                    )
+                    public_cursor += t - cursor
                     part_index += 1
                     cursor = t
                 freeze = tmp / f"{part_index:03d}_dead_air.mp4"
@@ -208,6 +221,25 @@ def _generate_rough_interview_source(task: TaskDefinition, *, source: Path, publ
                     duration_sec=float(event["duration_sec"]),
                 )
                 parts.append(freeze)
+                duration = float(event["duration_sec"])
+                timeline.append(
+                    {
+                        "kind": "inserted_dead_air",
+                        "public_start": public_cursor,
+                        "public_end": public_cursor + duration,
+                        "clean_start": t,
+                        "clean_end": t,
+                    }
+                )
+                defect_public_intervals.append(
+                    {
+                        "kind": "inserted_dead_air",
+                        "public_start": public_cursor,
+                        "public_end": public_cursor + duration,
+                        "clean_time_sec": t,
+                    }
+                )
+                public_cursor += duration
                 part_index += 1
             elif event_type == "repeat":
                 start = float(event["clean_start_sec"])
@@ -216,15 +248,54 @@ def _generate_rough_interview_source(task: TaskDefinition, *, source: Path, publ
                     out = tmp / f"{part_index:03d}_content.mp4"
                     make_shifted_segment(source=clean, output=out, start_sec=cursor, duration_sec=start - cursor, audio_delay_ms=0)
                     parts.append(out)
+                    timeline.append(
+                        {
+                            "kind": "content",
+                            "public_start": public_cursor,
+                            "public_end": public_cursor + (start - cursor),
+                            "clean_start": cursor,
+                            "clean_end": start,
+                        }
+                    )
+                    public_cursor += start - cursor
                     part_index += 1
                 phrase = tmp / f"{part_index:03d}_phrase.mp4"
                 make_shifted_segment(source=clean, output=phrase, start_sec=start, duration_sec=end - start, audio_delay_ms=0)
                 parts.append(phrase)
+                timeline.append(
+                    {
+                        "kind": "content",
+                        "public_start": public_cursor,
+                        "public_end": public_cursor + (end - start),
+                        "clean_start": start,
+                        "clean_end": end,
+                    }
+                )
+                public_cursor += end - start
                 part_index += 1
                 for _ in range(max(0, int(event.get("repeat_count", 2)) - 1)):
                     repeat = tmp / f"{part_index:03d}_repeat.mp4"
                     make_shifted_segment(source=clean, output=repeat, start_sec=start, duration_sec=end - start, audio_delay_ms=0)
                     parts.append(repeat)
+                    timeline.append(
+                        {
+                            "kind": "repeated_phrase_loop",
+                            "public_start": public_cursor,
+                            "public_end": public_cursor + (end - start),
+                            "clean_start": start,
+                            "clean_end": end,
+                        }
+                    )
+                    defect_public_intervals.append(
+                        {
+                            "kind": "repeated_phrase_loop",
+                            "public_start": public_cursor,
+                            "public_end": public_cursor + (end - start),
+                            "clean_start": start,
+                            "clean_end": end,
+                        }
+                    )
+                    public_cursor += end - start
                     part_index += 1
                 cursor = end
 
@@ -238,4 +309,14 @@ def _generate_rough_interview_source(task: TaskDefinition, *, source: Path, publ
                 audio_delay_ms=0,
             )
             parts.append(out)
+            timeline.append(
+                {
+                    "kind": "content",
+                    "public_start": public_cursor,
+                    "public_end": public_cursor + (task.clip_duration_sec - cursor),
+                    "clean_start": cursor,
+                    "clean_end": task.clip_duration_sec,
+                }
+            )
         concat_mp4(parts, public / "materials" / "source.mp4", work_dir=tmp)
+    write_json(private / "public_timeline.json", {"segments": timeline, "defect_public_intervals": defect_public_intervals})

@@ -84,6 +84,8 @@ def verify(
     run_id: str = typer.Option(..., "--run-id"),
     runs_dir: Path = Path("runs"),
     repo: Path = Path("."),
+    llm_judge: bool = typer.Option(False, "--llm-judge", help="Run GPT-5.5 LLM-as-judge if OPENAI_API_KEY is set."),
+    llm_model: str = typer.Option("gpt-5.5", "--llm-model", help="OpenAI model for LLM-as-judge."),
 ) -> None:
     """Score one run with the task-specific verifier."""
     run_root = runs_dir / run_id
@@ -94,6 +96,8 @@ def verify(
         agent=record["agent"],
         workspace=Path(record["workspace"]),
         repo=repo,
+        llm_judge=llm_judge,
+        llm_model=llm_model,
     )
     write_json(run_root / "score.json", score.model_dump(mode="json"))
     console.print(score.model_dump_json(indent=2))

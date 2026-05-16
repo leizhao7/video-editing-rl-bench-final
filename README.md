@@ -97,11 +97,21 @@ vebench generate --task all
 vebench prepare --agent codex --task expert_pancake_vertical_short
 vebench run --run-id expert_pancake_vertical_short-codex
 vebench verify --run-id expert_pancake_vertical_short-codex
+vebench verify --run-id expert_pancake_vertical_short-codex --llm-judge --llm-model gpt-5.5
 vebench report
 ```
 
-Verifier status: this is a v0 hard-verifier implementation. It enforces media gates, format,
-duration/aspect, non-degenerate audio/video, JSON schema, caption/SRT checks, declared interval
-coverage, and declared local sync repairs. The next implementation step is replacing declared
-interval/sync scoring with private frame/audio fingerprint matching so `edit_decision.json` cannot
-carry source-authenticity credit by itself.
+Verifier status: this is a v1 hard-verifier implementation. It enforces media gates, format,
+duration/aspect, non-degenerate audio/video, JSON schema, SRT/caption checks, crop-aware
+output-to-source visual matching, source interval coverage, negative/defect interval leakage,
+private clean-reference A/V residuals for the sync task, and private rough-source defect regions for
+the interview task.
+
+LLM-as-judge is optional at verify time because it calls the OpenAI API. Set `OPENAI_API_KEY` and run
+with `--llm-judge`; the default judge model is `gpt-5.5`. If the judge is unavailable, the verifier
+keeps the hard-verifier score and records a note. When enabled, the LLM score contributes 20% as a
+tiebreaker and cannot override failed hard gates.
+
+Known verifier limitations: ROI containment is still heuristic unless private ROI annotations are
+added, source matching is CPU feature matching rather than a learned video retrieval model, and task
+13 semantic preservation is strongest when LLM judge or ASR evidence is enabled.

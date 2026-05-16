@@ -4,7 +4,16 @@ from pathlib import Path
 from typing import Any
 
 from ..media.audio import audio_quality_score, audio_stats
+from ..media.captions import burned_caption_visibility_score
 from ..media.ffprobe import probe
+from ..media.matching import (
+    match_video_timeline,
+    matched_fraction,
+    seconds_in_intervals,
+    sync_residuals_ms,
+    timeline_diversity,
+    timeline_monotonicity,
+)
 from ..media.video import video_integrity_score, video_stats
 from ..schema import ScoreRecord
 from ..tasks.registry import get_task_definition
@@ -12,7 +21,6 @@ from .basic import basic_submission_score
 from .common import (
     aspect_score,
     clamp01,
-    extract_local_shifts,
     extract_removed_ranges,
     extract_source_ranges,
     interval_overlap,
@@ -25,6 +33,7 @@ from .common import (
     validate_json,
     window_score,
 )
+from .llm_judge import maybe_run_llm_judge
 
 
 def score_task_submission(
@@ -34,6 +43,8 @@ def score_task_submission(
     agent: str,
     workspace: Path,
     repo: Path,
+    llm_judge: bool = False,
+    llm_model: str | None = None,
 ) -> ScoreRecord:
     try:
         task = get_task_definition(task_id)
@@ -46,11 +57,11 @@ def score_task_submission(
     schema = load_json_if_exists(workspace / "edit_decision.schema.json") or task.edit_decision_schema
 
     if task_id == "expert_pancake_vertical_short":
-        return _score_pancake(run_id, task_id, agent, workspace, ground_truth, config, schema)
+        return _score_pancake(run_id, task_id, agent, workspace, ground_truth, config, schema, llm_judge, llm_model)
     if task_id == "piecewise_av_sync_repair":
-        return _score_piecewise_sync(run_id, task_id, agent, workspace, ground_truth, config, schema)
+        return _score_piecewise_sync(run_id, task_id, agent, workspace, repo, ground_truth, config, schema, llm_judge, llm_model)
     if task_id == "rough_interview_caption_cleanup":
-        return _score_interview(run_id, task_id, agent, workspace, ground_truth, config, schema)
+        return _score_interview(run_id, task_id, agent, workspace, repo, ground_truth, config, schema, llm_judge, llm_model)
     return basic_submission_score(run_id=run_id, task_id=task_id, agent=agent, workspace=workspace)
 
 
@@ -58,6 +69,10 @@ def _media_context(workspace: Path, config: dict[str, Any]) -> tuple[dict[str, f
     notes: list[str] = []
     output = workspace / "submit" / "output.mp4"
     source = workspace / "materials" / "source.mp4"
+    context: dict[str, Any] = {
+        "output_path": output,
+        "source_path": source,
+    }
     scores: dict[str, float] = {
         "gate_source_material_exists": 1.0 if source.exists() and source.stat().st_size > 0 else 0.0,
         "gate_output_exists": 1.0 if output.exists() and output.stat().st_size > 0 else 0.0,
@@ -68,7 +83,6 @@ def _media_context(workspace: Path, config: dict[str, Any]) -> tuple[dict[str, f
         "gate_non_degenerate_video": 0.0,
         "gate_non_degenerate_audio": 0.0,
     }
-    context: dict[str, Any] = {}
     fatal = False
     if not scores["gate_source_material_exists"]:
         notes.append("missing materials/source.mp4; task package is metadata-only or incomplete")
@@ -168,28 +182,41 @@ def _score_pancake(
     ground_truth: dict[str, Any],
     config: dict[str, Any],
     schema: dict[str, Any],
+    llm_judge: bool,
+    llm_model: str | None,
 ) -> ScoreRecord:
     scores, context, notes, fatal = _media_context(workspace, config)
     edit_score, edit, edit_notes = validate_json(workspace / "submit" / "edit_decision.json", schema)
     notes.extend(edit_notes)
     scores["edit_decision_schema"] = edit_score
 
-    ranges = extract_source_ranges(edit)
-    total_declared = sum(end - start for start, end in ranges)
-    scores["declared_source_range_count"] = float(len(ranges))
-    scores["hard_2_source_authenticity_timeline"] = clamp01(0.55 * min(1.0, total_declared / max(1.0, context.get("duration", 60.0))) + 0.45 * min(1.0, len(ranges) / 4.0))
+    output = Path(context["output_path"])
+    source = Path(context["source_path"])
+    matches = match_video_timeline(output=output, source=source, output_fps=1.0, source_fps=1.0)
+    if not matches:
+        notes.append("visual source matching unavailable or found no confident matches")
+    source_match_fraction = matched_fraction(matches, output_duration=float(context.get("duration", 0.0)), sample_step_sec=1.0)
+    diversity = timeline_diversity(matches)
+    scores["source_match_fraction"] = source_match_fraction
+    scores["source_timeline_diversity"] = float(diversity)
+    scores["source_time_monotonicity"] = timeline_monotonicity(matches)
+    scores["hard_2_source_authenticity_timeline"] = clamp01(
+        0.70 * source_match_fraction
+        + 0.20 * min(1.0, diversity / 4.0)
+        + 0.10 * scores["source_time_monotonicity"]
+    )
 
     step_scores: list[float] = []
     first_hits: list[float] = []
     caption_text = _caption_text(edit)
     for step in ground_truth["required_steps"]:
         interval = tuple(float(x) for x in step["interval"])
-        covered = total_overlap(ranges, interval)
+        covered = seconds_in_intervals(matches, [interval], sample_step_sec=1.0)
         visual = ramp_score(covered, good=2.5, bad=0.0, lower_is_better=False)
         keywords = step.get("keywords", [])
         keyword_score = 1.0 if any(str(keyword).lower() in caption_text for keyword in keywords) else 0.0
         step_scores.append(0.8 * visual + 0.2 * keyword_score)
-        hits = [max(start, interval[0]) for start, end in ranges if interval_overlap((start, end), interval) > 0]
+        hits = [match.source_time for match in matches if interval[0] <= match.source_time <= interval[1]]
         if hits:
             first_hits.append(min(hits))
     order_score = 1.0 if first_hits == sorted(first_hits) and len(first_hits) >= 4 else 0.7 if len(first_hits) >= 3 else 0.35
@@ -197,27 +224,39 @@ def _score_pancake(
 
     negative_leak = 0.0
     for item in ground_truth["negative_intervals"]:
-        negative_leak += total_overlap(ranges, tuple(float(x) for x in item["interval"]))
-    scores["negative_leak_seconds_declared"] = negative_leak
+        negative_leak += seconds_in_intervals(matches, [tuple(float(x) for x in item["interval"])], sample_step_sec=1.0)
+    scores["negative_leak_seconds"] = negative_leak
     scores["hard_4_negative_material_suppression"] = ramp_score(negative_leak, good=4.0, bad=18.0, lower_is_better=True)
 
     caption_count = len(edit.get("captions", [])) if isinstance(edit.get("captions"), list) else 0
     caption_keyword_score = sum(1 for step in ground_truth["required_steps"] if any(k in caption_text for k in step.get("keywords", []))) / len(ground_truth["required_steps"])
-    scores["hard_5_vertical_roi_caption"] = clamp01(0.35 * min(1.0, caption_count / 5.0) + 0.35 * caption_keyword_score + 0.30 * scores.get("video_integrity", 0.0))
+    cue_times = _caption_cue_times(edit)
+    caption_visibility = burned_caption_visibility_score(output, cue_times)
+    border_score = 1.0 - float(context.get("video_stats", {}).get("border_black_fraction", 0.0))
+    scores["caption_visibility"] = caption_visibility
+    scores["hard_5_vertical_roi_caption"] = clamp01(
+        0.25 * min(1.0, caption_count / 5.0)
+        + 0.25 * caption_keyword_score
+        + 0.25 * caption_visibility
+        + 0.25 * min(scores.get("video_integrity", 0.0), border_score)
+    )
 
     scores["hard_1_format_duration"] = _format_score(scores)
     scores["hard_6_audio_quality_cut_smoothness"] = scores.get("audio_quality", 0.0)
-    scores["metadata"] = edit_score
+    scores["metadata"] = clamp01(0.60 * edit_score + 0.40 * _edit_media_consistency_score(extract_source_ranges(edit), matches))
 
     weights = config["weights"]
     total = sum(scores.get(key, 0.0) * weight for key, weight in weights.items())
     if fatal:
         total = 0.0
+    if scores["hard_2_source_authenticity_timeline"] < 0.50:
+        total = min(total, 0.40)
     if scores["hard_4_negative_material_suppression"] < 0.30:
         total = min(total, 0.55)
     if scores["hard_3_expert_step_coverage_order"] < 0.40:
         total = min(total, 0.60)
-    return ScoreRecord(run_id=run_id, task_id=task_id, agent=agent, scores=scores, total=clamp01(total), notes=_v0_notes(notes))
+    total, notes = _apply_llm(task_id, workspace, scores, edit, total, notes, enabled=llm_judge, model=llm_model)
+    return ScoreRecord(run_id=run_id, task_id=task_id, agent=agent, scores=scores, total=clamp01(total), notes=_verifier_notes(notes))
 
 
 def _score_piecewise_sync(
@@ -225,49 +264,48 @@ def _score_piecewise_sync(
     task_id: str,
     agent: str,
     workspace: Path,
+    repo: Path,
     ground_truth: dict[str, Any],
     config: dict[str, Any],
     schema: dict[str, Any],
+    llm_judge: bool,
+    llm_model: str | None,
 ) -> ScoreRecord:
     scores, context, notes, fatal = _media_context(workspace, config)
     edit_score, edit, edit_notes = validate_json(workspace / "submit" / "edit_decision.json", schema)
     notes.extend(edit_notes)
     scores["edit_decision_schema"] = edit_score
 
-    shifts = extract_local_shifts(edit)
-    recipe_offsets = ground_truth["corruption_recipe"]["piecewise_audio_offsets"]
-    residuals: list[float] = []
-    for zone in recipe_offsets:
-        expected_repair = -float(zone["audio_delay_ms"])
-        overlap_scores: list[tuple[float, float]] = []
-        zone_interval = (float(zone["clean_start_sec"]), float(zone["clean_end_sec"]))
-        for shift in shifts:
-            overlap = interval_overlap((shift["source_start"], shift["source_end"]), zone_interval)
-            if overlap > 0:
-                overlap_scores.append((overlap, abs(float(shift["shift_ms"]) - expected_repair)))
-        if overlap_scores:
-            residuals.append(min(overlap_scores, key=lambda item: item[1])[1])
-        else:
-            residuals.append(999.0)
+    output = Path(context["output_path"])
+    clean_reference = repo / "tasks" / task_id / "private" / "clean_reference.mp4"
+    if not clean_reference.exists():
+        notes.append("missing private/clean_reference.mp4; full A/V residual verifier cannot run")
+        residuals = []
+        clean_reference = Path(context["source_path"])
+    else:
+        residuals = [abs(value) for value in sync_residuals_ms(output=output, clean_reference=clean_reference)]
     if residuals:
         median_residual = sorted(residuals)[len(residuals) // 2]
         p90_residual = sorted(residuals)[min(len(residuals) - 1, int(round(0.9 * (len(residuals) - 1))))]
     else:
         median_residual = p90_residual = 999.0
-    scores["declared_sync_median_residual_ms"] = float(median_residual)
-    scores["declared_sync_p90_residual_ms"] = float(p90_residual)
+    scores["sync_median_residual_ms"] = float(median_residual)
+    scores["sync_p90_residual_ms"] = float(p90_residual)
+    scores["sync_anchor_match_coverage"] = min(1.0, len(residuals) / 12.0)
     sync_score = 0.65 * ramp_score(median_residual, good=80.0, bad=420.0) + 0.35 * ramp_score(p90_residual, good=120.0, bad=560.0)
-    distinct_shifts = len({round(float(item.get("shift_ms", 0.0)) / 50.0) for item in shifts})
-    scores["local_av_sync_repair"] = clamp01(sync_score * min(1.0, distinct_shifts / 2.0))
+    scores["local_av_sync_repair"] = clamp01(sync_score * scores["sync_anchor_match_coverage"])
 
-    ranges = extract_source_ranges(edit)
+    video_matches = match_video_timeline(output=output, source=clean_reference, output_fps=1.0, source_fps=1.0, threshold=0.55)
+    if not video_matches:
+        notes.append("clean-reference visual matching found no confident matches")
     required_scores: list[float] = []
     for span in ground_truth["required_spans"]:
         interval = tuple(float(x) for x in span["interval"])
         duration = interval[1] - interval[0]
-        required_scores.append(clamp01(total_overlap(ranges, interval) / max(1.0, duration * 0.85)))
+        covered = seconds_in_intervals(video_matches, [interval], sample_step_sec=1.0)
+        required_scores.append(clamp01(covered / max(1.0, duration * 0.75)))
     scores["required_span_coverage"] = sum(required_scores) / max(1, len(required_scores))
-    scores["source_time_monotonicity"] = monotonicity_score(ranges)
+    scores["source_time_monotonicity"] = timeline_monotonicity(video_matches)
     vstats = context.get("video_stats", {})
     astats = context.get("audio_stats", {})
     damage_cleanup = min(
@@ -296,7 +334,8 @@ def _score_piecewise_sync(
         total = min(total, 0.55)
     if scores["required_span_coverage"] < 0.45:
         total = min(total, 0.60)
-    return ScoreRecord(run_id=run_id, task_id=task_id, agent=agent, scores=scores, total=clamp01(total), notes=_v0_notes(notes))
+    total, notes = _apply_llm(task_id, workspace, scores, edit, total, notes, enabled=llm_judge, model=llm_model)
+    return ScoreRecord(run_id=run_id, task_id=task_id, agent=agent, scores=scores, total=clamp01(total), notes=_verifier_notes(notes))
 
 
 def _score_interview(
@@ -304,27 +343,33 @@ def _score_interview(
     task_id: str,
     agent: str,
     workspace: Path,
+    repo: Path,
     ground_truth: dict[str, Any],
     config: dict[str, Any],
     schema: dict[str, Any],
+    llm_judge: bool,
+    llm_model: str | None,
 ) -> ScoreRecord:
     scores, context, notes, fatal = _media_context(workspace, config)
     edit_score, edit, edit_notes = validate_json(workspace / "submit" / "edit_decision.json", schema)
     notes.extend(edit_notes)
     scores["edit_decision_schema"] = edit_score
-    removed = extract_removed_ranges(edit)
 
-    dead_air_scores: list[float] = []
-    for item in ground_truth["defect_map"]["inserted_dead_air"]:
-        t = float(item["clean_time_sec"])
-        dur = float(item["duration_sec"])
-        dead_air_scores.append(clamp01(total_overlap(removed, (t, t + dur)) / dur))
-    repeat_scores: list[float] = []
-    for item in ground_truth["defect_map"]["repeated_phrase_loops"]:
-        interval = (float(item["clean_start_sec"]), float(item["clean_end_sec"]))
-        repeat_scores.append(1.0 if total_overlap(removed, interval) > 0.5 else 0.0)
-    scores["inserted_pause_removed_ratio"] = sum(dead_air_scores) / max(1, len(dead_air_scores))
-    scores["repeat_loop_suppression"] = sum(repeat_scores) / max(1, len(repeat_scores))
+    output = Path(context["output_path"])
+    source = Path(context["source_path"])
+    matches = match_video_timeline(output=output, source=source, output_fps=1.0, source_fps=1.0, threshold=0.55)
+    if not matches:
+        notes.append("rough-source visual matching found no confident matches")
+    public_defects = _interview_defect_public_intervals(repo=repo, task_id=task_id, ground_truth=ground_truth)
+    dead_air_intervals = [(item["public_start"], item["public_end"]) for item in public_defects if item["kind"] == "inserted_dead_air"]
+    repeat_intervals = [(item["public_start"], item["public_end"]) for item in public_defects if item["kind"] == "repeated_phrase_loop"]
+    dead_air_total = sum(end - start for start, end in dead_air_intervals)
+    repeat_total = sum(end - start for start, end in repeat_intervals)
+    dead_air_kept = seconds_in_intervals(matches, dead_air_intervals, sample_step_sec=1.0) if dead_air_intervals else 0.0
+    repeat_kept = seconds_in_intervals(matches, repeat_intervals, sample_step_sec=1.0) if repeat_intervals else 0.0
+    scores["inserted_pause_removed_ratio"] = 1.0 - clamp01(dead_air_kept / max(0.1, dead_air_total))
+    scores["repeat_loop_suppression"] = 1.0 - clamp01(repeat_kept / max(0.1, repeat_total))
+    scores["source_match_fraction"] = matched_fraction(matches, output_duration=float(context.get("duration", 0.0)), sample_step_sec=1.0)
 
     srt_entries = parse_srt(workspace / "submit" / "captions.srt")
     srt_body = srt_text(srt_entries)
@@ -342,18 +387,20 @@ def _score_interview(
     scores["srt_valid"] = 1.0 if srt_entries else 0.0
     caption_duration = sum(max(0.0, float(entry["end"]) - float(entry["start"])) for entry in srt_entries)
     output_duration = max(1.0, float(context.get("duration", 1.0)))
+    cue_times = [(float(entry["start"]) + float(entry["end"])) / 2.0 for entry in srt_entries[:20]]
+    scores["caption_visibility"] = burned_caption_visibility_score(output, cue_times)
     scores["srt_timing_coverage"] = clamp01(caption_duration / (output_duration * 0.70))
     scores["caption_audio_deliverable_quality"] = clamp01(
-        0.30 * scores["srt_valid"]
-        + 0.25 * scores["srt_timing_coverage"]
-        + 0.20 * (1.0 if len(srt_body.split()) >= 80 else len(srt_body.split()) / 80.0)
-        + 0.25 * scores.get("audio_quality", 0.0)
+        0.22 * scores["srt_valid"]
+        + 0.22 * scores["srt_timing_coverage"]
+        + 0.18 * (1.0 if len(srt_body.split()) >= 80 else len(srt_body.split()) / 80.0)
+        + 0.18 * scores["caption_visibility"]
+        + 0.20 * scores.get("audio_quality", 0.0)
     )
 
-    ranges = extract_source_ranges(edit)
     scores["source_fidelity_format_naturalness"] = clamp01(
         0.35 * _format_score(scores)
-        + 0.25 * min(1.0, len(ranges) / 3.0)
+        + 0.25 * scores["source_match_fraction"]
         + 0.20 * scores.get("video_integrity", 0.0)
         + 0.20 * edit_score
     )
@@ -370,7 +417,10 @@ def _score_interview(
         total = min(total, 0.65)
     if not srt_entries:
         total = min(total, 0.75)
-    return ScoreRecord(run_id=run_id, task_id=task_id, agent=agent, scores=scores, total=clamp01(total), notes=_v0_notes(notes))
+    if scores["source_match_fraction"] < 0.45:
+        total = min(total, 0.35)
+    total, notes = _apply_llm(task_id, workspace, scores, edit, total, notes, enabled=llm_judge, model=llm_model)
+    return ScoreRecord(run_id=run_id, task_id=task_id, agent=agent, scores=scores, total=clamp01(total), notes=_verifier_notes(notes))
 
 
 def _format_score(scores: dict[str, float]) -> float:
@@ -395,9 +445,106 @@ def _caption_text(edit: dict[str, Any]) -> str:
     return " ".join(texts).lower()
 
 
-def _v0_notes(notes: list[str]) -> list[str]:
+def _caption_cue_times(edit: dict[str, Any]) -> list[float]:
+    cue_times: list[float] = []
+    captions = edit.get("captions")
+    if not isinstance(captions, list):
+        return cue_times
+    for item in captions:
+        if not isinstance(item, dict):
+            continue
+        start = item.get("start", item.get("output_start"))
+        end = item.get("end", item.get("output_end"))
+        if isinstance(start, (int, float)) and isinstance(end, (int, float)):
+            cue_times.append((float(start) + float(end)) / 2.0)
+        elif isinstance(start, (int, float)):
+            cue_times.append(float(start) + 0.5)
+    return cue_times
+
+
+def _edit_media_consistency_score(ranges: list[tuple[float, float]], matches: list[Any]) -> float:
+    if not ranges:
+        return 0.0
+    if not matches:
+        return 0.0
+    hits = 0
+    for match in matches:
+        if any(start <= match.source_time <= end for start, end in ranges):
+            hits += 1
+    return clamp01(hits / max(1, len(matches)))
+
+
+def _interview_defect_public_intervals(*, repo: Path, task_id: str, ground_truth: dict[str, Any]) -> list[dict[str, Any]]:
+    timeline_path = repo / "tasks" / task_id / "private" / "public_timeline.json"
+    timeline = load_json_if_exists(timeline_path)
+    if timeline.get("defect_public_intervals"):
+        return [
+            {
+                "kind": str(item["kind"]),
+                "public_start": float(item["public_start"]),
+                "public_end": float(item["public_end"]),
+            }
+            for item in timeline["defect_public_intervals"]
+        ]
+
+    defects: list[dict[str, Any]] = []
+    events: list[tuple[float, str, dict[str, Any]]] = []
+    for item in ground_truth["defect_map"]["inserted_dead_air"]:
+        events.append((float(item["clean_time_sec"]), "inserted_dead_air", item))
+    for item in ground_truth["defect_map"]["repeated_phrase_loops"]:
+        events.append((float(item["clean_start_sec"]), "repeated_phrase_loop", item))
+    events.sort(key=lambda item: item[0])
+
+    cumulative_extra = 0.0
+    for _, kind, item in events:
+        if kind == "inserted_dead_air":
+            clean_time = float(item["clean_time_sec"])
+            duration = float(item["duration_sec"])
+            public_start = clean_time + cumulative_extra
+            defects.append({"kind": kind, "public_start": public_start, "public_end": public_start + duration})
+            cumulative_extra += duration
+        else:
+            start = float(item["clean_start_sec"])
+            end = float(item["clean_end_sec"])
+            duration = end - start
+            repeats = max(0, int(item.get("repeat_count", 2)) - 1)
+            public_original_start = start + cumulative_extra
+            for repeat_idx in range(repeats):
+                public_start = public_original_start + duration * (repeat_idx + 1)
+                defects.append({"kind": kind, "public_start": public_start, "public_end": public_start + duration})
+            cumulative_extra += duration * repeats
+    return defects
+
+
+def _apply_llm(
+    task_id: str,
+    workspace: Path,
+    scores: dict[str, float],
+    edit: dict[str, Any],
+    total: float,
+    notes: list[str],
+    *,
+    enabled: bool,
+    model: str | None,
+) -> tuple[float, list[str]]:
+    llm_scores, llm_notes, _raw = maybe_run_llm_judge(
+        task_id=task_id,
+        workspace=workspace,
+        hard_scores=scores,
+        edit_decision=edit,
+        enabled=enabled,
+        model=model,
+    )
+    scores.update(llm_scores)
+    notes.extend(llm_notes)
+    if llm_scores.get("llm_judge_available", 0.0) >= 1.0:
+        total = 0.80 * total + 0.20 * llm_scores.get("llm_overall", 0.0)
+    return total, notes
+
+
+def _verifier_notes(notes: list[str]) -> list[str]:
     out = list(notes)
     out.append(
-        "v0 verifier: private media matching is not implemented yet; interval/sync coverage currently uses edit_decision declarations plus hard media gates."
+        "v1 verifier: media gates and CPU visual/audio matching are implemented; ROI and semantic checks remain heuristic unless LLM judge/ASR evidence is enabled."
     )
     return out
