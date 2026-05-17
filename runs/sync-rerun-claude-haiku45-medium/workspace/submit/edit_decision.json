@@ -1,0 +1,106 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "source_duration_seconds": 101.78,
+  "final_duration_seconds": 91.90,
+  "issues_identified": [
+    {
+      "issue": "Initial dead air / black screen",
+      "time_range": "0.00s - 2.70s",
+      "duration_seconds": 2.70,
+      "severity": "high",
+      "action": "removed"
+    },
+    {
+      "issue": "Extraneous social media comments section (non-tutorial content artifact)",
+      "time_range": "32.00s - 38.00s",
+      "duration_seconds": 6.00,
+      "severity": "high",
+      "action": "removed",
+      "description": "Screenshots of social media comments overlay appearing during tutorial, completely unrelated to microphone/audio tutorial content"
+    },
+    {
+      "issue": "Final dead air / black screen",
+      "time_range": "100.55s - 101.65s",
+      "duration_seconds": 1.10,
+      "severity": "high",
+      "action": "removed"
+    },
+    {
+      "issue": "Audio levels too quiet",
+      "description": "Original audio had RMS peak of only 0.122, making speech difficult to hear",
+      "severity": "high",
+      "action": "normalized"
+    }
+  ],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 2.70,
+      "source_end": 32.00,
+      "output_start": 0.00,
+      "output_end": 29.30,
+      "parameters": {"reason": "Remove initial dead air and keep intro content"},
+      "reason": "Removed 2.70s of initial black/silence, kept intro segment with creator explaining concepts"
+    },
+    {
+      "type": "trim",
+      "source_start": 38.00,
+      "source_end": 100.55,
+      "output_start": 29.30,
+      "output_end": 91.85,
+      "parameters": {"reason": "Remove extraneous content, keep main tutorial and clap demonstration"},
+      "reason": "Skipped 6s of extraneous social media comments section (32-38s), kept main tutorial content including clap demonstration at ~51s"
+    },
+    {
+      "type": "filter",
+      "parameters": {"filter": "loudnorm", "integrated_loudness": -16, "true_peak": -1.5, "lra": 11},
+      "reason": "Normalized audio to standard speech loudness (-16 LUFS) without clipping or distortion"
+    }
+  ],
+  "content_preserved": [
+    "Creator introduction and setup explanation (2.70s - 32.00s in original)",
+    "Clap demonstration and explanation of why creators clap before takes (38.00s - ~52s in original)",
+    "Main tutorial content about microphone and audio recording techniques",
+    "Audio editing software demonstration with waveform visualization"
+  ],
+  "content_removed": [
+    "Initial black screen and silence (0-2.70s)",
+    "Social media comments screenshot overlay (32-38s) - non-tutorial artifact",
+    "Final black screen and silence (100.55-101.65s)"
+  ],
+  "tools_used": [
+    "ffmpeg",
+    "ffprobe",
+    "python3",
+    "librosa (audio analysis)",
+    "numpy (signal processing)"
+  ],
+  "checks_performed": [
+    "ffprobe metadata inspection of source video",
+    "Visual frame sampling (102 frames at 1 fps) to identify content and artifacts",
+    "Audio RMS energy analysis to detect silence and identify content segments",
+    "Identification of extraneous content through frame inspection",
+    "Duration calculation for edited segments",
+    "ffprobe validation of output.mp4 for codec compliance",
+    "Verification of H.264 video codec",
+    "Verification of AAC audio codec",
+    "Verification of 1280x720 resolution and 16:9 aspect ratio",
+    "Verification of 30 fps frame rate (within 24-30 fps requirement)",
+    "Verification of output duration within 88-98 second target (actual: 91.90s)",
+    "Audio normalization loudness check"
+  ],
+  "final_specifications": {
+    "video_codec": "H.264 (AVC)",
+    "video_profile": "High",
+    "resolution": "1280x720",
+    "aspect_ratio": "16:9",
+    "pixel_format": "yuv420p",
+    "sample_aspect_ratio": "1:1",
+    "frame_rate": "30 fps",
+    "audio_codec": "AAC (LC profile)",
+    "audio_channels": "stereo",
+    "audio_sample_rate": "48000 Hz",
+    "duration_seconds": 91.90,
+    "file_size_mb": 8.11
+  }
+}

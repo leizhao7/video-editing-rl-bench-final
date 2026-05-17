@@ -1,0 +1,13 @@
+{
+  "agent": "gemini",
+  "created_at": "2026-05-17T17:25:17.222632+00:00",
+  "metadata": {
+    "effort": "medium",
+    "model": "gemini-3.1-flash-lite",
+    "returncode": 0.0
+  },
+  "run_id": "final_interview_gemini31flash_lite_medium",
+  "status": "scored",
+  "task_id": "rough_interview_caption_cleanup",
+  "workspace": "/data/video-agent/final_interview_runs_abs/final_interview_gemini31flash_lite_medium/workspace"
+}

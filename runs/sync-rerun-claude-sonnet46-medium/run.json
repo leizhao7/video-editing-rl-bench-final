@@ -1,0 +1,13 @@
+{
+  "agent": "claude",
+  "created_at": "2026-05-17T15:21:39.404358+00:00",
+  "metadata": {
+    "effort": "medium",
+    "model": "claude-sonnet-4-6",
+    "returncode": 0
+  },
+  "run_id": "sync-rerun-claude-sonnet46-medium",
+  "status": "completed",
+  "task_id": "piecewise_av_sync_repair",
+  "workspace": "runs/sync-rerun-claude-sonnet46-medium/workspace"
+}

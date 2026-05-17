@@ -1,0 +1,92 @@
+{
+  "clip_end_sec": 3475.0,
+  "clip_start_sec": 3279.0,
+  "defect_map": {
+    "inserted_dead_air": [
+      {
+        "clean_time_sec": 34.2,
+        "duration_sec": 2.4
+      },
+      {
+        "clean_time_sec": 58.8,
+        "duration_sec": 1.8
+      },
+      {
+        "clean_time_sec": 92.1,
+        "duration_sec": 2.9
+      },
+      {
+        "clean_time_sec": 141.6,
+        "duration_sec": 2.1
+      }
+    ],
+    "repeated_phrase_loops": [
+      {
+        "clean_end_sec": 52.2,
+        "clean_start_sec": 49.0,
+        "repeat_count": 2
+      },
+      {
+        "clean_end_sec": 121.0,
+        "clean_start_sec": 118.4,
+        "repeat_count": 2
+      }
+    ]
+  },
+  "semantic_anchors": [
+    {
+      "id": "leader_hiring_gen_z",
+      "phrases": ["hiring gen z", "hiring gen zee", "gen z"]
+    },
+    {
+      "id": "thrive_motivation_goals",
+      "phrases": ["thrive stay motivated", "stay motivated", "achieve their goals", "thrive"]
+    },
+    {
+      "id": "strengths_weaknesses_frame",
+      "phrases": ["strengths and weaknesses", "biggest weakness", "perfectionist"]
+    },
+    {
+      "id": "strengths_have_liabilities",
+      "phrases": ["strengths often have liability", "strengths often have", "liability"]
+    },
+    {
+      "id": "confidence_arrogance_context",
+      "phrases": ["confident", "arrogant", "wrong context"]
+    },
+    {
+      "id": "weaknesses_silver_linings",
+      "phrases": ["weaknesses also have", "silver linings", "server linings"]
+    },
+    {
+      "id": "chronically_disorganized",
+      "phrases": ["chronically disorganized", "disorganized"]
+    },
+    {
+      "id": "systems_do_not_stick",
+      "phrases": ["system", "worked for like a week", "back to being disorganized"]
+    },
+    {
+      "id": "context_it_depends",
+      "phrases": ["it depends", "answer is it depends", "context"]
+    },
+    {
+      "id": "characteristics_strength_or_weakness",
+      "phrases": ["characteristics", "huge strengths", "huge weaknesses"]
+    },
+    {
+      "id": "careful_labeling_generations",
+      "phrases": ["label people or generations", "strong or weak", "stronger weak"]
+    },
+    {
+      "id": "gen_z_activist",
+      "phrases": ["very activist", "activist"]
+    },
+    {
+      "id": "hated_jobs_silence",
+      "phrases": ["hated their jobs", "suffered in silence"]
+    }
+  ],
+  "source_url": "https://www.youtube.com/watch?v=Q-zuTZuYeCg",
+  "task_id": "rough_interview_caption_cleanup"
+}

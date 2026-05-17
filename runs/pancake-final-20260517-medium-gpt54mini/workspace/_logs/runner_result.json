@@ -1,0 +1,10 @@
+{
+  "agent": "codex",
+  "duration_sec": 317.873,
+  "ended_at": "2026-05-17T16:00:11.542374+00:00",
+  "error": null,
+  "image": "video-bench-agent:cpu",
+  "returncode": 0,
+  "started_at": "2026-05-17T15:54:53.669332+00:00",
+  "stdout_stderr_log": "/root/video-editing-rl-bench/runs/pancake-final-20260517-medium-gpt54mini/workspace/_logs/docker_stdout_stderr.log"
+}

@@ -74,6 +74,7 @@ def run(
     memory: str = "16g",
     network: str = "bridge",
     model: Optional[str] = typer.Option(None, "--model", help="Optional model name for CLIs that support model selection."),
+    effort: Optional[str] = typer.Option(None, "--effort", help="Optional reasoning effort for CLIs that support it."),
 ) -> None:
     """Run Codex, Claude Code, or a smoke agent inside Docker."""
     run_root = runs_dir / run_id
@@ -87,11 +88,14 @@ def run(
         memory=memory,
         network=network,
         model=model,
+        effort=effort,
     )
     record["status"] = "completed" if rc == 0 else "failed"
     record["metadata"]["returncode"] = rc
     if model:
         record["metadata"]["model"] = model
+    if effort:
+        record["metadata"]["effort"] = effort
     write_json(run_root / "run.json", record)
     raise typer.Exit(rc)
 

@@ -30,18 +30,17 @@ Read `tools.md` for the current sandbox's available commands, Python packages, a
 
 Do not assume GPU availability unless `tools.md` explicitly says GPU tools are available.
 
-## Expected Workflow
+## Required Capability Evidence
 
-You should usually:
+Follow and document these evidence-producing phases:
 
-1. Inspect the task prompt and materials.
-2. Probe source media with `ffprobe`.
-3. Extract or sample audio/frames when useful.
-4. Build an edit plan.
-5. Render a first output.
-6. Verify duration, streams, resolution, audio presence, and visual sanity.
-7. Revise if the output violates the task requirements.
-8. Submit final artifacts.
+1. Detection: inspect the source media, probe metadata, and sample audio/frames enough to identify likely issues.
+2. Planning: write a short operational edit plan before rendering the final output.
+3. Tool execution: use the available media tools and scripts to make the planned edit.
+4. Final validation: before submission, verify output duration, codecs, resolution/aspect, audio presence, silence/clipping, black/frozen frames, and task-specific requirements.
+
+Reflect these phases in `submit/run_history.md`.
+Include concrete checks in `submit/edit_decision.json.checks_performed`.
 
 ## Required Submission
 
@@ -82,10 +81,10 @@ submit/agent_transcript.md
 ```
 
 `submit/run_history.md` should be a concise chronological action log: what you inspected, the
-edit plan you chose, major commands/scripts run, notable errors, fixes, and final self-checks.
+edit plan you chose, major commands/scripts run, notable errors, fixes, and final validation checks.
 
 `submit/agent_transcript.md` should preserve the useful transcript of your work session. Include
-observable actions, commands, outputs, failures, revisions, and checks. Do not include hidden or
+observable actions, commands, outputs, failures, fixes, and final checks. Do not include hidden or
 private chain-of-thought; summarize decisions rather than exposing private reasoning.
 
 ## Important

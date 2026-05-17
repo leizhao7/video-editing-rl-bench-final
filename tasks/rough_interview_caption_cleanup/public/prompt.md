@@ -22,8 +22,14 @@ Output requirements:
 - Add readable burned-in captions for all spoken words, and save the timing as `submit/captions.srt`.
 - Avoid black frames, frozen frames, unrelated footage, background music, synthetic narration, and heavy decorative overlays.
 
-In `submit/edit_decision.json`, list kept source segments, removed defects or pauses, audio filters,
-subtitle generation method, caption style, and measured self-checks.
+Keep the edit plan compact. Use the transcript and visible source timecodes to choose a small set of
+kept ranges, usually 4-7, that form one coherent answer. After the first export, check the rendered
+file for duration, format, speech level, long pauses, caption visibility, and caption timing. If one
+clear issue remains, repair it and export once more.
+
+In `submit/edit_decision.json`, list kept source segments, removed defects or pauses, transcript
+evidence for the kept idea, audio filters, subtitle generation method, caption style, final checks,
+and any change made after checking the first export.
 
 Also write `submit/run_history.md` and `submit/agent_transcript.md` with your action log and
 observable work transcript/summary.

@@ -1,143 +1,189 @@
-# Video Editing RL Mini-Benchmark
+# Video Editing RL Benchmark
 
-This repo is a scaffold for a 3-task video-editing benchmark for long-horizon agentic RL.
+This repository contains a compact long-horizon video-editing benchmark for agentic coding systems. Each task is packaged as a folder with the public prompt and source media, private ground-truth criteria, verifier code, and hackability analysis. The pipeline prepares an isolated workspace, runs an agent in Docker, verifies the submitted edit, and aggregates the results into `reports/tasks_and_rubrics.tsv`.
 
-The benchmark shape is:
+The benchmark currently includes three implemented tasks and historical runs from Codex, Claude Code, and Gemini CLI. API keys and account credentials are intentionally not committed.
 
-```text
-task generator -> agent execution -> verifier scoring -> aggregate report
-```
-
-The intended first deployment is a CPU video-editing server: `ffmpeg`, `ffprobe`, Python 3.11, and
-analysis libraries run locally; heavyweight AI/video models can be replaced with APIs or omitted.
-
-## Repo Layout
+## Repository Layout
 
 ```text
 src/vebench/
-  cli.py                  # single entrypoint for generate/run/verify/report
-  media/                  # ffmpeg, ffprobe, audio/video helper wrappers
-  tasks/                  # task registry and task generator implementations
-  verifiers/              # scorer implementations and shared metric code
-  agents/                 # wrappers for Codex/Claude/Gemini/OpenCode/manual runs
-  reporting/              # tasks_and_rubrics.tsv and LaTeX report helpers
-
-prompts/
-  general_agent_prompt.md # shared instructions prepended to every agent task
-  tools_cpu.md            # CPU sandbox tool reference copied into each run
+  cli.py                    # Typer CLI: generate, prepare, run, verify, report, doctor
+  agents/docker_runner.py   # Docker runner for Codex, Claude Code, Gemini, and shell-smoke
+  tasks/                    # task registry and task package generation
+  verifiers/                # hard verifiers and optional LLM-as-judge
+  reporting/aggregate.py    # builds reports/tasks_and_rubrics.tsv
+  media/                    # ffmpeg, ffprobe, audio/video/caption helpers
 
 tasks/
-  <task_id>/
-    prompt.md             # prompt given to the agent
-    materials/            # source media and sidecar files
-    ground_truth.json     # hidden or verifier-only scoring data
-    rubric.yaml           # scoring dimensions + hackability notes
+  piecewise_av_sync_repair/
+  expert_pancake_vertical_short/
+  rough_interview_caption_cleanup/
+    public/                 # prompt, tools, source metadata, output specs, schemas, materials
+    private/                # ground truth, verifier config, hackability analysis
 
-runs/
-  <run_id>/workspace/
-    submit/output.mp4              # agent-produced video
-    submit/edit_decision.json      # machine-readable edit record
-    submit/run_history.md          # chronological action log
-    submit/agent_transcript.md     # useful session transcript or transcript summary
-    _logs/runner_command.json      # Docker invocation metadata
-    _logs/runner_result.json       # return code and runtime metadata
-    _logs/docker_stdout_stderr.log # raw runner stdout/stderr
-    _logs/native_sessions/         # copied Codex/Claude native session files when available
+prompts/
+  general_agent_prompt.md   # shared agent instructions
+  tools_cpu.md              # sandbox tool reference
 
-Agent CLI credentials and native session stores persist outside the ephemeral Docker container under
-`$VEBENCH_AGENT_HOME_ROOT/<agent>/`, defaulting to `~/.vebench-agent-home/<agent>/` on the host.
+scripts/
+  bootstrap_ubuntu.sh       # host dependency bootstrap
+  build_agent_image.sh      # Docker image build
+  run_final_matrix.sh       # one-command task x agent/model run + verify + report
+  demo_one_task_pipeline.sh # small end-to-end smoke/demo pipeline
 
+configs/
+  final_model_matrix.tsv    # final 3-task x 8-model run matrix
+
+runs/                       # historical run metadata, submissions, logs, and scores
 reports/
-  tasks_and_rubrics.tsv   # generated benchmark table
-
+  tasks_and_rubrics.tsv     # auto-generated deliverable table
 report/
-  main.tex                # take-home writeup source
+  main.tex
+  video_editing_rl_benchmark_report.pdf
 ```
 
-See [docs/repo_framework.md](docs/repo_framework.md) for the design rationale and
-[docs/task_specs.md](docs/task_specs.md) for the proposed three-task benchmark.
-
-## Server Bootstrap
-
-On an Ubuntu 22.04 server:
+## Clone and Environment Setup
 
 ```bash
+git clone https://github.com/<owner>/video-editing-rl-bench.git
+cd video-editing-rl-bench
+
 bash scripts/bootstrap_ubuntu.sh
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -U pip
 pip install -e .
+
+bash scripts/build_agent_image.sh
+python -m vebench.cli doctor
 ```
 
-If the server has a large data disk, set:
+The benchmark assumes `ffmpeg`, `ffprobe`, Docker, Python 3.11+, and the Python packages from `pyproject.toml`. The Docker image used by default is `video-bench-agent:cpu`.
+
+## Keys and Agent Login
+
+Do not commit real keys. Put them in your shell environment or an untracked `.env` file.
 
 ```bash
-export VEBENCH_DATA_ROOT=/data/video-agent
-export TMPDIR=/data/video-agent/tmp
+export OPENAI_API_KEY=...       # Codex API mode and/or LLM judge
+export ANTHROPIC_API_KEY=...    # Claude Code API mode
+export GEMINI_API_KEY=...       # Gemini CLI API mode
 ```
 
-## Implemented Tasks
+For OpenRouter-backed LLM judging:
 
-The first implementation pass wires the three selected task designs into the CLI:
+```bash
+export OPENAI_API_KEY=...                    # OpenRouter key
+export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+export VEBENCH_LLM_API_STYLE=chat
+export VEBENCH_LLM_JUDGE_MODEL=gpt-5.5
+```
+
+Codex and Claude Code can also be used with account login instead of API keys. The Docker runner mounts persistent host homes under `~/.vebench-agent-home/<agent>/`, so login once and reuse:
+
+```bash
+mkdir -p ~/.vebench-agent-home/codex ~/.vebench-agent-home/claude
+
+docker run --rm -it \
+  -v ~/.vebench-agent-home/codex:/agent-home \
+  -e HOME=/agent-home video-bench-agent:cpu \
+  bash -lc 'codex login --device-auth'
+
+docker run --rm -it \
+  -v ~/.vebench-agent-home/claude:/agent-home \
+  -e HOME=/agent-home video-bench-agent:cpu \
+  bash -lc 'claude login'
+```
+
+Gemini CLI is normally run with `GEMINI_API_KEY`.
+
+## One-Command Final Matrix
+
+The final matrix is defined in `configs/final_model_matrix.tsv`. It covers the three tasks and eight model settings:
+
+- GPT-5.5, GPT-5.4, GPT-5.4 Mini through Codex
+- Claude Opus 4.7, Claude Sonnet 4.6, Claude Haiku 4.5 through Claude Code
+- Gemini 3.1 Pro Preview and Gemini 3.1 Flash-Lite through Gemini CLI
+
+Run the full matrix and verify each submission:
+
+```bash
+source .venv/bin/activate
+export VEBENCH_LLM_JUDGE=1
+scripts/run_final_matrix.sh
+```
+
+The script performs:
 
 ```text
-expert_pancake_vertical_short       # worker 5: expert tutorial extraction from noisy challenge video
-piecewise_av_sync_repair            # worker 7: local A/V sync and damage repair
-rough_interview_caption_cleanup     # worker 13: speech cleanup, captions, and interview polish
+prepare -> run agent -> verify -> aggregate report
 ```
 
-Task packages can be generated as metadata-only scaffolds, or with a local source video:
+At the end it writes `reports/tasks_and_rubrics.tsv`. Set `TASK_FILTER=piecewise_av_sync_repair` or `AGENT_FILTER=codex` to run a subset. Set `VEBENCH_LLM_JUDGE=0` to run hard verifiers only.
+
+## Running One Task Manually
+
+Prepare a workspace:
 
 ```bash
-vebench generate --task all
-vebench generate --task expert_pancake_vertical_short --source /path/to/pancake_source.mp4 --force
-vebench generate --task piecewise_av_sync_repair --source /path/to/clean_clap_source.mp4 --force
-vebench generate --task rough_interview_caption_cleanup --source /path/to/clean_interview_source.mp4 --force
+python -m vebench.cli prepare \
+  --agent codex \
+  --task piecewise_av_sync_repair \
+  --run-id sync-codex-gpt55
 ```
 
-`--source` should be the downloaded source video for that task. For task 7 and task 13, the
-generator creates the public damaged/rough `materials/source.mp4` and stores private references or
-defect maps under `tasks/<task_id>/private/`.
-
-For task 5, generate private ROI annotations after packaging the real source:
+Run the agent:
 
 ```bash
-export OPENAI_API_KEY=...
-vebench annotate-roi --task expert_pancake_vertical_short --model gpt-5.5 --frames-per-step 3
+python -m vebench.cli run \
+  --run-id sync-codex-gpt55 \
+  --model gpt-5.5 \
+  --effort medium
 ```
 
-This writes `tasks/expert_pancake_vertical_short/private/roi_keyframes.json`. The verifier then
-checks whether LLM-annotated source ROIs such as pancake, pan, hand, spatula, and plated result are
-still visible in the submitted vertical crop.
-
-## Intended Commands
+Verify and aggregate:
 
 ```bash
-vebench generate --task all
-vebench prepare --agent codex --task expert_pancake_vertical_short
-vebench run --run-id expert_pancake_vertical_short-codex --model gpt-5.5
-vebench verify --run-id expert_pancake_vertical_short-codex
-vebench verify --run-id expert_pancake_vertical_short-codex --llm-judge --llm-model gpt-5.5
-vebench report
+python -m vebench.cli verify \
+  --run-id sync-codex-gpt55 \
+  --llm-judge \
+  --llm-model "${VEBENCH_LLM_JUDGE_MODEL:-gpt-5.5}"
+
+python -m vebench.cli report \
+  --runs-dir runs \
+  --output reports/tasks_and_rubrics.tsv
 ```
 
-Verifier status: this is a v1 hard-verifier implementation. It enforces media gates, format,
-duration/aspect, non-degenerate audio/video, JSON schema, SRT/caption checks, crop-aware
-output-to-source visual matching, source interval coverage, negative/defect interval leakage,
-private clean-reference A/V residuals for the sync task, and private rough-source defect regions for
-the interview task. For the interview task it also runs `faster-whisper` on the output when
-available, caches `_logs/output_asr.json`, and scores token-level semantic anchor recall, anchor
-order, and duplicate n-gram rate. It also checks that each run saves `submit/run_history.md` and
-`submit/agent_transcript.md`; Docker runs additionally keep raw CLI/runner logs under `_logs/`.
-Codex and Claude Code native session stores are snapshotted before the container exits when their
-standard session directories are present.
+## Smoke Test
 
-LLM-as-judge is optional at verify time because it calls the OpenAI API. Set `OPENAI_API_KEY` and run
-with `--llm-judge`; the default judge model is `gpt-5.5`. If the judge is unavailable, the verifier
-keeps the hard-verifier score and records a note. When enabled, the LLM score contributes 20% as a
-tiebreaker and cannot override failed hard gates.
+This checks the local package, Docker runner, verifier, and TSV aggregation without calling a paid model:
 
-Known verifier limitations: ROI containment becomes much stronger after running `annotate-roi`, but
-the private boxes are still LLM/VLM-generated labels rather than human labels. Source matching is CPU
-feature matching rather than a learned video retrieval model, so thresholds should be calibrated on
-the real YouTube packages.
+```bash
+RUNS_DIR=/tmp/vebench-demo-runs \
+REPORT_PATH=/tmp/vebench-demo-reports/tasks_and_rubrics.tsv \
+TASK_ID=piecewise_av_sync_repair \
+AGENT=shell-smoke \
+scripts/demo_one_task_pipeline.sh
+```
+
+The smoke agent intentionally submits a trivial synthetic video, so the score is not meaningful; the goal is to test the pipeline.
+
+## Deliverables
+
+- Report PDF: `report/video_editing_rl_benchmark_report.pdf`
+- LaTeX source: `report/main.tex`
+- Auto-generated TSV: `reports/tasks_and_rubrics.tsv`
+- Task packages: `tasks/<task_id>/`
+- Agent prompts: `prompts/` and each `tasks/<task_id>/public/prompt.md`
+- Historical runs: `runs/`
+
+`tasks_and_rubrics.tsv` is reproducible from checked-in run score files with:
+
+```bash
+python -m vebench.cli report --runs-dir runs --output reports/tasks_and_rubrics.tsv
+```
+
+## Secret Hygiene
+
+The public release excludes `.env`, `.secrets/`, virtual environments, and raw native session stores that may contain account metadata or keys. Historical run folders keep the task workspaces, final submissions, run histories, agent transcript summaries, score files, and verifier-readable metadata needed to audit the benchmark results.

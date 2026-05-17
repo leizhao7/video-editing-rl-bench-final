@@ -1,0 +1,13 @@
+{
+  "agent": "gemini",
+  "created_at": "2026-05-17T16:03:10.338472+00:00",
+  "metadata": {
+    "effort": "medium",
+    "model": "gemini-2.5-pro",
+    "returncode": 0
+  },
+  "run_id": "pancake-final-20260517-medium-gemini25pro",
+  "status": "completed",
+  "task_id": "expert_pancake_vertical_short",
+  "workspace": "runs/pancake-final-20260517-medium-gemini25pro/workspace"
+}

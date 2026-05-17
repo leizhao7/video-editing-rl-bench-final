@@ -1,0 +1,46 @@
+{
+  "aspect": "landscape_16_9",
+  "duration_gate": [
+    60.0,
+    75.0
+  ],
+  "duration_target": [
+    62.0,
+    72.0
+  ],
+  "resolution": [
+    1280,
+    720
+  ],
+  "final_weights": {
+    "r_general": 0.2,
+    "r_task": 0.8
+  },
+  "task_mix_weights": {
+    "r_hard_task": 0.85,
+    "r_llm": 0.15
+  },
+  "general_weights": {
+    "format_compliance": 0.28,
+    "source_match_fraction": 0.18,
+    "video_integrity": 0.14,
+    "audio_quality": 0.14,
+    "edit_decision_schema": 0.09,
+    "run_history_transcript_score": 0.04,
+    "r_grounded_evidence_and_checks": 0.05,
+    "r_anti_reward_hacking": 0.08
+  },
+  "hard_task_weights": {
+    "speech_cleanup_hard": 0.28,
+    "semantic_anchor_preservation": 0.24,
+    "caption_hard_quality": 0.24,
+    "audio_normalization": 0.13,
+    "r_grounded_evidence_and_checks": 0.04,
+    "r_anti_reward_hacking": 0.07
+  },
+  "weights": {
+    "caption_audio_deliverable_quality": 0.3,
+    "source_fidelity_format_naturalness": 0.25,
+    "speech_cleanup_semantic_preservation": 0.45
+  }
+}

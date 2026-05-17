@@ -16,6 +16,14 @@ class MediaMatch:
     similarity: float
 
 
+@dataclass(frozen=True)
+class SyncResidual:
+    output_time: float
+    source_time: float
+    residual_ms: float
+    correlation: float
+
+
 def match_video_timeline(
     *,
     output: Path,
@@ -131,6 +139,26 @@ def sync_residuals_ms(
     search_radius_sec: float = 1.0,
     window_sec: float = 1.5,
 ) -> list[float]:
+    return [
+        item.residual_ms
+        for item in sync_residual_matches(
+            output=output,
+            clean_reference=clean_reference,
+            output_step_sec=output_step_sec,
+            search_radius_sec=search_radius_sec,
+            window_sec=window_sec,
+        )
+    ]
+
+
+def sync_residual_matches(
+    *,
+    output: Path,
+    clean_reference: Path,
+    output_step_sec: float = 3.0,
+    search_radius_sec: float = 1.0,
+    window_sec: float = 1.5,
+) -> list[SyncResidual]:
     video_matches = match_video_timeline(
         output=output,
         source=clean_reference,
@@ -147,7 +175,7 @@ def sync_residuals_ms(
     except Exception:  # noqa: BLE001
         return []
 
-    residuals: list[float] = []
+    residuals: list[SyncResidual] = []
     for video_match in video_matches:
         out_chunk = _audio_center_chunk(output_audio, center_sec=video_match.output_time, sample_rate=8000, window_sec=window_sec)
         if out_chunk is None:
@@ -170,7 +198,14 @@ def sync_residuals_ms(
                 best_corr = corr
                 best_offset = float(offset)
         if best_corr > 0.08:
-            residuals.append(best_offset * 1000.0)
+            residuals.append(
+                SyncResidual(
+                    output_time=video_match.output_time,
+                    source_time=video_match.source_time,
+                    residual_ms=best_offset * 1000.0,
+                    correlation=best_corr,
+                )
+            )
     return residuals
 
 

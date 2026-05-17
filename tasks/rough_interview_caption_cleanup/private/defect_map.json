@@ -1,0 +1,32 @@
+{
+  "inserted_dead_air": [
+    {
+      "clean_time_sec": 34.2,
+      "duration_sec": 2.4
+    },
+    {
+      "clean_time_sec": 58.8,
+      "duration_sec": 1.8
+    },
+    {
+      "clean_time_sec": 92.1,
+      "duration_sec": 2.9
+    },
+    {
+      "clean_time_sec": 141.6,
+      "duration_sec": 2.1
+    }
+  ],
+  "repeated_phrase_loops": [
+    {
+      "clean_end_sec": 52.2,
+      "clean_start_sec": 49.0,
+      "repeat_count": 2
+    },
+    {
+      "clean_end_sec": 121.0,
+      "clean_start_sec": 118.4,
+      "repeat_count": 2
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 5.0,
+      "source_end": 101.78,
+      "output_start": 0.0,
+      "output_end": 96.78,
+      "parameters": {"trim_start": 5.0},
+      "reason": "Removed start padding to meet target duration and improve pacing."
+    }
+  ],
+  "tools_used": ["ffmpeg", "python"],
+  "checks_performed": [
+    "ffprobe output duration check",
+    "sampled frames for quality"
+  ]
+}

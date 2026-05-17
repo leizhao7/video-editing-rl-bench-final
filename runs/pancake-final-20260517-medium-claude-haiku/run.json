@@ -1,0 +1,13 @@
+{
+  "agent": "claude",
+  "created_at": "2026-05-17T16:03:09.878377+00:00",
+  "metadata": {
+    "effort": "medium",
+    "model": "claude-haiku-4-5-20251001",
+    "returncode": 0
+  },
+  "run_id": "pancake-final-20260517-medium-claude-haiku",
+  "status": "completed",
+  "task_id": "expert_pancake_vertical_short",
+  "workspace": "runs/pancake-final-20260517-medium-claude-haiku/workspace"
+}

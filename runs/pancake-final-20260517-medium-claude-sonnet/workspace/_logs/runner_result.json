@@ -1,0 +1,10 @@
+{
+  "agent": "claude",
+  "duration_sec": 381.182,
+  "ended_at": "2026-05-17T16:09:32.499686+00:00",
+  "error": null,
+  "image": "video-bench-agent:cpu",
+  "returncode": 0,
+  "started_at": "2026-05-17T16:03:11.317641+00:00",
+  "stdout_stderr_log": "/root/video-editing-rl-bench/runs/pancake-final-20260517-medium-claude-sonnet/workspace/_logs/docker_stdout_stderr.log"
+}

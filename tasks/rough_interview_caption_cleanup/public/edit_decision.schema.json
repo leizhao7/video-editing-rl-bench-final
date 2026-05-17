@@ -13,6 +13,24 @@
       "additionalProperties": true,
       "type": "object"
     },
+    "checks_performed": {
+      "oneOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      ]
+    },
+    "final_checks": {
+      "additionalProperties": true,
+      "type": "object"
+    },
     "kept_segments": {
       "items": {
         "additionalProperties": true,
@@ -84,9 +102,24 @@
       },
       "type": "array"
     },
+    "revision_notes": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "type": "array"
+    },
     "self_checks": {
       "additionalProperties": true,
       "type": "object"
+    },
+    "source_evidence": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "minItems": 2,
+      "type": "array"
     },
     "source_files": {
       "items": {
@@ -109,10 +142,12 @@
   "required": [
     "source_files",
     "tools_used",
-    "self_checks",
+    "checks_performed",
     "kept_segments",
     "removed_defects",
-    "caption_style"
+    "caption_style",
+    "source_evidence",
+    "final_checks"
   ],
   "type": "object"
 }

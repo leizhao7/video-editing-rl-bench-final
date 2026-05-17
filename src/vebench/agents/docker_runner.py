@@ -16,25 +16,44 @@ def _env_flags(agent: str) -> list[str]:
         flags += ["-e", "OPENAI_API_KEY"]
     if agent == "claude" and os.environ.get("ANTHROPIC_API_KEY"):
         flags += ["-e", "ANTHROPIC_API_KEY"]
+    if agent == "gemini" and os.environ.get("GEMINI_API_KEY"):
+        flags += ["-e", "GEMINI_API_KEY"]
     return flags
 
 
-def _agent_command(agent: str, *, model: str | None = None) -> str:
+def _agent_command(agent: str, *, model: str | None = None, effort: str | None = None) -> str:
     if agent == "codex":
         model_flag = f" --model {shlex.quote(model)}" if model else ""
+        effort_flag = f" -c model_reasoning_effort={shlex.quote(effort)}" if effort else ""
         return _logged_agent_command(
             agent="codex",
             invocation=(
-                f"codex exec{model_flag} --skip-git-repo-check "
+                f"codex exec{model_flag}{effort_flag} --skip-git-repo-check "
                 '--dangerously-bypass-approvals-and-sandbox "$(cat prompt.md)"'
             ),
             log_path="_logs/codex.log",
         )
     if agent == "claude":
+        model_flag = f" --model {shlex.quote(model)}" if model else ""
+        effort_flag = f" --effort {shlex.quote(effort)}" if effort else ""
         return _logged_agent_command(
             agent="claude",
-            invocation='claude -p --permission-mode bypassPermissions --output-format stream-json "$(cat prompt.md)"',
+            invocation=(
+                f"claude -p{model_flag}{effort_flag} --permission-mode dontAsk "
+                "--allowedTools Bash,Read,Write,Edit,MultiEdit,Glob,Grep,LS "
+                '--verbose --output-format stream-json "$(cat prompt.md)"'
+            ),
             log_path="_logs/claude.jsonl",
+        )
+    if agent == "gemini":
+        model_flag = f" --model {shlex.quote(model)}" if model else ""
+        return _logged_agent_command(
+            agent="gemini",
+            invocation=(
+                f'gemini -p "$(cat prompt.md)"{model_flag} '
+                "--output-format stream-json --skip-trust --approval-mode yolo"
+            ),
+            log_path="_logs/gemini.jsonl",
         )
     if agent == "shell-smoke":
         return (
@@ -131,6 +150,24 @@ fi
   find "$native_dir" -type f -print | sort
 } > "$native_dir/session_manifest.txt"
 """
+    if agent == "gemini":
+        return """
+native_dir="_logs/native_sessions/gemini"
+mkdir -p "$native_dir"
+if [ -d "$HOME/.gemini/tmp" ]; then
+  cp -a "$HOME/.gemini/tmp" "$native_dir/"
+fi
+{
+  printf '%s\\n' 'agent=gemini'
+  printf 'captured_at_utc='
+  date -u +%Y-%m-%dT%H:%M:%SZ
+  printf 'home=%s\\n' "$HOME"
+  printf '%s\\n' 'expected_sources=$HOME/.gemini/tmp'
+  printf '%s\\n' 'saved_files:'
+  find "$native_dir" -type f -print | sort
+  printf '%s\\n' 'secret_files_excluded=.gemini/.env'
+} > "$native_dir/session_manifest.txt"
+"""
     return ""
 
 
@@ -152,12 +189,14 @@ def run_in_docker(
     memory: str = "16g",
     network: str = "bridge",
     model: str | None = None,
+    effort: str | None = None,
 ) -> int:
     workspace = workspace.resolve()
     logs_dir = workspace / "_logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
     agent_home = _agent_home(agent)
     selected_model = model or _default_model(agent)
+    selected_effort = effort or _default_effort(agent)
     cmd = [
         "docker",
         "run",
@@ -178,7 +217,7 @@ def run_in_docker(
         image,
         "bash",
         "-lc",
-        _agent_command(agent, model=selected_model),
+        _agent_command(agent, model=selected_model, effort=selected_effort),
     ]
     started_at = _utc_now()
     start_time = time.monotonic()
@@ -193,6 +232,7 @@ def run_in_docker(
             "workspace": str(workspace),
             "agent_home": str(agent_home),
             "model": selected_model,
+            "effort": selected_effort,
             "started_at": started_at,
             "docker_command": cmd,
         },
@@ -250,4 +290,16 @@ def _default_model(agent: str) -> str | None:
         return os.environ.get("VEBENCH_CODEX_MODEL")
     if agent == "claude":
         return os.environ.get("VEBENCH_CLAUDE_MODEL")
+    if agent == "gemini":
+        return os.environ.get("VEBENCH_GEMINI_MODEL")
+    return None
+
+
+def _default_effort(agent: str) -> str | None:
+    if agent == "codex":
+        return os.environ.get("VEBENCH_CODEX_EFFORT")
+    if agent == "claude":
+        return os.environ.get("VEBENCH_CLAUDE_EFFORT")
+    if agent == "gemini":
+        return os.environ.get("VEBENCH_GEMINI_EFFORT")
     return None

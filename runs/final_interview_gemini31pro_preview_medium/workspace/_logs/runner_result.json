@@ -1,0 +1,10 @@
+{
+  "agent": "gemini",
+  "duration_sec": 412.333,
+  "ended_at": "2026-05-17T11:32:12.216370+00:00",
+  "error": null,
+  "image": "video-bench-agent:cpu",
+  "returncode": 137,
+  "started_at": "2026-05-17T11:25:19.883529+00:00",
+  "stdout_stderr_log": "/root/video-editing-rl-bench/runs/final_interview_gemini31pro_preview_medium/workspace/_logs/docker_stdout_stderr.log"
+}

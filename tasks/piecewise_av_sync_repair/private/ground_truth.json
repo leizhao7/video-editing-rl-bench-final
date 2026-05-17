@@ -1,0 +1,79 @@
+{
+  "clip_end_sec": 100.0,
+  "clip_start_sec": 4.0,
+  "corruption_recipe": {
+    "audio_gain_segments": [
+      {
+        "clean_end_sec": 72.0,
+        "clean_start_sec": 48.0,
+        "gain_db": -7.0
+      }
+    ],
+    "black_leader_sec": 1.2,
+    "black_tail_sec": 0.8,
+    "duplicate_insert": {
+      "clean_end_sec": 74.2,
+      "clean_start_sec": 72.0,
+      "repeat_count": 1
+    },
+    "flash_insert": {
+      "clean_time_sec": 23.8,
+      "color": "white",
+      "duration_sec": 0.7
+    },
+    "freeze_splice": {
+      "clean_time_sec": 47.5,
+      "duration_sec": 0.75
+    },
+    "piecewise_audio_offsets": [
+      {
+        "audio_delay_ms": 720,
+        "clean_end_sec": 24.0,
+        "clean_start_sec": 0.0
+      },
+      {
+        "audio_delay_ms": -650,
+        "clean_end_sec": 48.0,
+        "clean_start_sec": 24.0
+      },
+      {
+        "audio_delay_ms": 480,
+        "clean_end_sec": 72.0,
+        "clean_start_sec": 48.0
+      },
+      {
+        "audio_delay_ms": -380,
+        "clean_end_sec": 96.0,
+        "clean_start_sec": 72.0
+      }
+    ]
+  },
+  "required_spans": [
+    {
+      "id": "opening_clap_demo",
+      "interval": [
+        0.0,
+        31.5
+      ],
+      "weight": 0.35
+    },
+    {
+      "id": "middle_explanation",
+      "interval": [
+        31.5,
+        63.0
+      ],
+      "weight": 0.35
+    },
+    {
+      "id": "final_explanation",
+      "interval": [
+        63.0,
+        96.0
+      ],
+      "weight": 0.3
+    }
+  ],
+  "source_url": "https://www.youtube.com/watch?v=_aC3QUQp4FM",
+  "task_id": "piecewise_av_sync_repair"
+}

@@ -1,0 +1,164 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "source_duration_s": 101.782,
+  "output_duration_s": 89.767,
+  "issues_found": [
+    {
+      "type": "black_frame_and_silence",
+      "source_range": [0.0, 3.0],
+      "description": "Opening black frame (t=0s) followed by silent/pre-speech dead air; audio RMS < 0.002 throughout; no usable content"
+    },
+    {
+      "type": "white_flash_artifact",
+      "source_range": [25.0, 25.833],
+      "description": "Pure white frame burst (mean pixel = 255) lasting ~0.83s (25 frames at 30fps); non-content visual artifact"
+    },
+    {
+      "type": "overexposed_white_section",
+      "source_range": [32.267, 37.300],
+      "description": "~5s of massively overexposed frames (mean pixel ~238.9); concurrent audio is near-silent (RMS < 0.01); completely unusable section"
+    },
+    {
+      "type": "dead_audio_dropout",
+      "source_range": [48.800, 51.200],
+      "description": "2.4-second complete audio silence (RMS = 0.000) with video still playing; technical audio dropout artifact"
+    },
+    {
+      "type": "trailing_silence_and_black",
+      "source_range": [101.0, 101.782],
+      "description": "Final black frame at t=101s with trailing silence; trimmed at t=101.0s"
+    },
+    {
+      "type": "low_loudness",
+      "description": "Source integrated loudness: -27.05 LUFS; true peak: +2.09 dBTP (already clipping in source); applied loudnorm to target -16 LUFS / -1 dBTP"
+    }
+  ],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 0.0,
+      "source_end": 3.0,
+      "output_start": null,
+      "output_end": null,
+      "parameters": {"action": "remove"},
+      "reason": "Remove black frame and silent dead-air start (no speech until ~5s, first activity at 3.1s)"
+    },
+    {
+      "type": "trim",
+      "source_start": 3.0,
+      "source_end": 24.967,
+      "output_start": 0.0,
+      "output_end": 21.967,
+      "parameters": {"action": "keep"},
+      "reason": "First content segment: tutorial intro, clap explanation begins; clap transients at source t~11s preserved"
+    },
+    {
+      "type": "trim",
+      "source_start": 24.967,
+      "source_end": 25.833,
+      "output_start": null,
+      "output_end": null,
+      "parameters": {"action": "remove"},
+      "reason": "Remove white flash artifact (pure white, mean=255, ~0.83s)"
+    },
+    {
+      "type": "trim",
+      "source_start": 25.833,
+      "source_end": 32.267,
+      "output_start": 21.967,
+      "output_end": 28.401,
+      "parameters": {"action": "keep"},
+      "reason": "Second content segment: continuation of tutorial content"
+    },
+    {
+      "type": "trim",
+      "source_start": 32.267,
+      "source_end": 37.300,
+      "output_start": null,
+      "output_end": null,
+      "parameters": {"action": "remove"},
+      "reason": "Remove overexposed/white section (mean~238.9, ~5s) with near-silent audio; non-content artifact"
+    },
+    {
+      "type": "trim",
+      "source_start": 37.300,
+      "source_end": 48.800,
+      "output_start": 28.401,
+      "output_end": 39.901,
+      "parameters": {"action": "keep"},
+      "reason": "Third content segment: tutorial continuation; clap transient at source t~51.9s (output t~40s) preserved"
+    },
+    {
+      "type": "trim",
+      "source_start": 48.800,
+      "source_end": 51.200,
+      "output_start": null,
+      "output_end": null,
+      "parameters": {"action": "remove"},
+      "reason": "Remove 2.4s dead audio dropout (absolute silence in both channels while video continues)"
+    },
+    {
+      "type": "trim",
+      "source_start": 51.200,
+      "source_end": 101.0,
+      "output_start": 39.901,
+      "output_end": 89.701,
+      "parameters": {"action": "keep"},
+      "reason": "Fourth and final content segment: includes clap demonstration cluster at source t=79-81s (output t~68-70s) with explanation"
+    },
+    {
+      "type": "concat",
+      "source_start": null,
+      "source_end": null,
+      "output_start": 0.0,
+      "output_end": 89.767,
+      "parameters": {
+        "segments": 4,
+        "filter": "ffmpeg concat=n=4:v=1:a=1"
+      },
+      "reason": "Concatenate the 4 clean segments into a single continuous timeline"
+    },
+    {
+      "type": "filter",
+      "source_start": null,
+      "source_end": null,
+      "output_start": 0.0,
+      "output_end": 89.767,
+      "parameters": {
+        "filter": "loudnorm",
+        "target_I": -16,
+        "target_TP": -1,
+        "target_LRA": 11,
+        "measured_input_I": -27.05,
+        "measured_input_TP": 2.09,
+        "measured_input_LRA": 13.50,
+        "achieved_output_I": -18.19,
+        "achieved_output_TP": -1.00,
+        "normalization_type": "dynamic"
+      },
+      "reason": "Normalize speech loudness from -27 LUFS to target -16 LUFS; true peak limited to -1 dBTP to prevent clipping; dynamic normalization chosen because source true peak was +2.09 dBTP (clipping)"
+    }
+  ],
+  "tools_used": ["ffmpeg", "ffprobe", "python3", "librosa", "opencv-python", "numpy"],
+  "output_specs": {
+    "codec_video": "h264",
+    "codec_audio": "aac",
+    "resolution": "1280x720",
+    "aspect_ratio": "16:9",
+    "sample_aspect_ratio": "1:1",
+    "fps": 30,
+    "audio_channels": 2,
+    "audio_sample_rate": 48000,
+    "duration_s": 89.767
+  },
+  "checks_performed": [
+    "ffprobe -show_streams submit/output.mp4 => H.264 1280x720 16:9 30fps AAC 48kHz stereo 89.767s",
+    "Sampled output at 1fps (90 frames): NO black frames, NO white frames, NO frozen frames detected",
+    "Output audio RMS per second: min=-30 dBFS, max=-15.6 dBFS — no silence seconds, speech level acceptable",
+    "Output audio peak: 1.0000 (1 sample; expected rounding artifact after AAC encode/decode cycle, inaudible)",
+    "Clap transients confirmed present in output: t~2-9s (source t=5-12s clap series), t~40s (source t=79-81s clap demonstration cluster)",
+    "Duration 89.767s — within required 88-98s range",
+    "Audio loudnorm: input_i=-27.05 LUFS, output_i=-18.19 LUFS, output_tp=-1.00 dBTP",
+    "No external footage, synthetic speech, or overlays added"
+  ]
+}

@@ -1,0 +1,151 @@
+
+{
+  "source_files": ["materials/source.mp4"],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 164.0,
+      "source_end": 170.0,
+      "output_start": 0.0,
+      "output_end": 6.0,
+      "reason": "Mixing batter"
+    },
+    {
+      "type": "trim",
+      "source_start": 172.0,
+      "source_end": 178.0,
+      "output_start": 6.0,
+      "output_end": 12.0,
+      "reason": "Pouring batter"
+    },
+    {
+      "type": "trim",
+      "source_start": 180.0,
+      "source_end": 188.0,
+      "output_start": 12.0,
+      "output_end": 20.0,
+      "reason": "Flipping pancake"
+    },
+    {
+      "type": "trim",
+      "source_start": 190.0,
+      "source_end": 198.0,
+      "output_start": 20.0,
+      "output_end": 28.0,
+      "reason": "Cooking pancake"
+    },
+    {
+      "type": "trim",
+      "source_start": 200.0,
+      "source_end": 208.0,
+      "output_start": 28.0,
+      "output_end": 36.0,
+      "reason": "Plating pancake"
+    },
+    {
+      "type": "trim",
+      "source_start": 210.0,
+      "source_end": 218.0,
+      "output_start": 36.0,
+      "output_end": 44.0,
+      "reason": "Adding toppings"
+    },
+    {
+      "type": "trim",
+      "source_start": 220.0,
+      "source_end": 231.0,
+      "output_start": 44.0,
+      "output_end": 55.0,
+      "reason": "Final shot of pancakes"
+    },
+    {
+      "type": "crop",
+      "parameters": {
+        "width": "ih*9/16",
+        "height": "ih"
+      },
+      "reason": "Crop to 9:16 aspect ratio"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "drawtext",
+        "text": "1. Mix the batter until smooth.",
+        "x": "(w-text_w)/2",
+        "y": "(h-text_h)/2"
+      },
+      "reason": "Add caption"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "drawtext",
+        "text": "2. Pour batter onto a hot pan.",
+        "x": "(w-text_w)/2",
+        "y": "(h-text_h)/2"
+      },
+      "reason": "Add caption"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "drawtext",
+        "text": "3. Flip when bubbles appear.",
+        "x": "(w-text_w)/2",
+        "y": "(h-text_h)/2"
+      },
+      "reason": "Add caption"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "drawtext",
+        "text": "4. Cook until golden brown.",
+        "x": "(w-text_w)/2",
+        "y": "(h-text_h)/2"
+      },
+      "reason": "Add caption"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "drawtext",
+        "text": "5. Plate the pancake.",
+        "x": "(w-text_w)/2",
+        "y": "(h-text_h)/2"
+      },
+      "reason": "Add caption"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "drawtext",
+        "text": "6. Add your favorite toppings.",
+        "x": "(w-text_w)/2",
+        "y": "(h-text_h)/2"
+      },
+      "reason": "Add caption"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "drawtext",
+        "text": "Enjoy your delicious pancakes!",
+        "x": "(w-text_w)/2",
+        "y": "(h-text_h)/2"
+      },
+      "reason": "Add caption"
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "name": "loudnorm"
+      },
+      "reason": "Normalize audio loudness"
+    }
+  ],
+  "tools_used": ["ffmpeg"],
+  "checks_performed": [
+    "ffprobe submit/output.mp4"
+  ]
+}

@@ -1,0 +1,189 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=*}
+\title{Video Editing RL Mini-Benchmark}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Benchmark Architecture}
+
+This benchmark evaluates long-horizon video-editing agents. Each run gives the agent a task prompt, source materials, output specifications, and a description of available editing tools. The agent does not see private ground truth, verifier thresholds, or other agents' outputs. It works inside a Docker sandbox and submits a final video plus structured evidence: \texttt{submit/output.mp4}, \texttt{submit/edit\_decision.json}, \texttt{submit/run\_history.md}, and \texttt{submit/agent\_transcript.md}. Some tasks also require sidecar artifacts such as captions.
+
+Each task is released as one folder containing the prompt, source materials, verifier code entry points, private ground-truth criteria, and hackability analysis. The shared code exposes a single pipeline:
+\[
+\text{prepare workspace} \rightarrow \text{run agent} \rightarrow \text{verify submission} \rightarrow \text{aggregate results}.
+\]
+The sandbox includes a CPU-based video and audio editing stack for media probing, trimming, concatenation, transcoding, frame extraction, audio processing, scene analysis, transcription, image analysis, schema validation, and report generation. Specific package names are listed in Appendix~\ref{app:tools}.
+
+The verifier is split into general and task-specific reward terms:
+\[
+R = 0.2 r_{\mathrm{general}} + 0.8 r_{\mathrm{task}}.
+\]
+\(r_{\mathrm{general}}\) checks reusable media requirements: playable output, audio/video presence, format, duration gates, non-degenerate frames, audio quality, and required submitted files. \(r_{\mathrm{task}}\) checks the actual editing objective. For tasks where semantic judgment is useful, the task reward is:
+\[
+r_{\mathrm{task}} = 0.85 r_{\mathrm{hard\_task}} + 0.15 r_{\mathrm{llm}},
+\]
+where \(r_{\mathrm{hard\_task}}\) is explicit verifier code and \(r_{\mathrm{llm}}\) is an LLM-as-judge score. For the A/V sync task, the LLM judge is diagnostic only; the final reward is hard-verifier based.
+
+The reward design follows a ``unit test'' view of video editing. Instead of asking whether a video is good in one vague scalar, each dimension checks a concrete property: correct format, preserved content, removed artifacts, synced audio, readable captions, clean sound, or coherent source order. This gives denser RL signal than a single human preference label. The difficulty is reward hacking: a model can satisfy one narrow metric while hurting the video, such as making captions huge to pass readability. Each dimension therefore has counter-checks, and severe failures trigger hard caps so that many small passes cannot hide a major error.
+
+\section{Details of Benchmarks}
+
+\subsection{Piecewise A/V Sync Repair}
+
+The agent repairs a damaged 16:9 tutorial clip. The source includes black boundary padding, four local A/V offsets, a white flash, a frozen/dead-air splice, a duplicate bad insert, and a local audio-level issue. The target horizon is about 15 genuinely sequential decisions and 28--34 tool calls. The dependency structure is detection, timestamp localization, local repair planning, multi-pass rendering, and final verification. A one-command global shift is not enough because the sync error is piecewise.
+
+The task stresses reasoning over a plan, tool use, and multimodal grounding. It does not intentionally stress iterative self-correction: agents can revise, but reward is based on the final diagnosis, edit, and media quality.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.28\linewidth}p{0.30\linewidth}p{0.34\linewidth}}
+\toprule
+Issue & Location or magnitude & Expected repair \\
+\midrule
+Boundary padding & 1.2 s leader, 0.8 s tail & Remove padding without deleting useful content \\
+Piecewise desync & +720, -650, +480, -380 ms regions & Repair local offsets, not one global shift \\
+White flash & 0.7 s visual artifact & Remove cleanly and preserve neighboring content \\
+Freeze/dead air & 0.75 s frozen splice & Remove dead section and maintain continuity \\
+Duplicate insert & 2.2 s repeated segment & Remove the duplicate only \\
+Audio damage & 24 s attenuated region & Normalize speech without clipping \\
+\bottomrule
+\end{tabular}
+\caption{Injected issues for Piecewise A/V Sync Repair.}
+\end{table}
+
+\paragraph{Reward rubric.}
+The main task dimensions are black-boundary cleanup, global sync, segmented sync, freeze/dead-air cleanup, duplicate cleanup, visual-artifact cleanup, content preservation, source-time monotonicity, and audio-level repair. Sync and required-span preservation are hard-to-hack because they use private clean-reference timing and private required spans. Artifact and audio checks are hackable but bounded because over-trimming, silence, clipping, frozen frames, black frames, and duplicate content are measurable. LLM judging is soft/vibes and is not used as a primary reward for this task. The reward emits a vector of dense subscores plus caps for fatal media, bad duration, low content preservation, low task score, remaining major artifacts, duplicate failure, or severe audio failure. All rubric dimensions can enter the final training signal; with different weights they also provide denser, more step-level reward.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Agent & Model & \(r_{\mathrm{general}}\) & \(r_{\mathrm{task}}\) & Total \\
+\midrule
+Codex & GPT-5.5 & 0.882 & 0.499 & 0.576 \\
+Codex & GPT-5.4 & 0.837 & 0.446 & 0.525 \\
+Codex & GPT-5.4 Mini & 0.832 & 0.548 & 0.605 \\
+Claude Code & Opus 4.7 & 0.919 & 0.507 & 0.589 \\
+Claude Code & Sonnet 4.6 & 0.822 & 0.641 & 0.677 \\
+Claude Code & Haiku 4.5 & 0.832 & 0.432 & 0.512 \\
+Gemini CLI & 3.1 Pro Preview & 0.717 & 0.612 & 0.633 \\
+Gemini CLI & 3.1 Flash-Lite & 0.762 & 0.399 & 0.471 \\
+\bottomrule
+\end{tabular}
+\caption{Piecewise A/V Sync Repair results.}
+\end{table}
+
+\subsection{Expert Pancake Vertical Short}
+
+The agent converts a noisy pancake challenge/tutorial source into a vertical short. The realistic user request is to extract the useful expert cooking arc and remove novice, blooper, reaction, or end-card material. The output must be true portrait video, preserve the cooking sequence, include readable step captions, and avoid fake vertical formatting. The horizon is roughly 12--18 sequential decisions: inspect source, identify tutorial regions, reject negative regions, plan step order, choose vertical crops, write captions, render, and verify mobile readability.
+
+The task stresses planning, tool use, and visual grounding over action stages such as pan prep, batter, bubble cue, flip, and plating. It does not test generative video, object removal, or cinematic color transfer.
+
+\paragraph{Reward rubric.}
+Task dimensions include source authenticity, allowed-region coverage, negative-region leakage, visual step coverage, step order, vertical reframe quality, fake-portrait detection, caption completeness, caption/action alignment, and LLM-assessed tutorial coherence. Source-region and step-coverage checks are hard-to-hack because they use private intervals and source-frame matching. Caption and crop checks are hackable but bounded: the verifier checks caption size, placement, readability, important-object occlusion, and padding artifacts, so oversized or decorative captions do not pass for free. The LLM judge is soft/vibes and only a minority semantic layer. The reward is a vector of graded scores with caps for missing output, wrong aspect, fake vertical format, too much negative material, weak step coverage, order failure, missing captions, or weak semantic captions. All rubric dimensions can enter the final training signal; with different weights they also provide denser, more step-level reward.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Agent & Model & \(r_{\mathrm{general}}\) & \(r_{\mathrm{task}}\) & Total \\
+\midrule
+Codex & GPT-5.5 & 0.887 & 0.796 & 0.805 \\
+Codex & GPT-5.4 & 0.948 & 0.961 & 0.939 \\
+Codex & GPT-5.4 Mini & 0.881 & 0.879 & 0.865 \\
+Claude Code & Opus 4.7 & 0.928 & 0.809 & 0.808 \\
+Claude Code & Sonnet 4.6 & 0.896 & 0.749 & 0.767 \\
+Claude Code & Haiku 4.5 & 0.834 & 0.265 & 0.366 \\
+Gemini CLI & 3.1 Pro Preview & 0.897 & 0.651 & 0.350 \\
+Gemini CLI & 3.1 Flash-Lite & 0.892 & 0.712 & 0.550 \\
+\bottomrule
+\end{tabular}
+\caption{Expert Pancake Vertical Short results.}
+\end{table}
+
+\subsection{Rough Interview Caption Cleanup}
+
+The agent cleans up a rough interview clip into a publishable captioned segment. The task includes dead air, filler, uneven pacing, caption requirements, and semantic preservation constraints. A good edit removes obvious roughness but keeps the explanation intact and synchronized. The expected horizon is about 12--16 sequential decisions: inspect speech and timing, find removable dead regions, preserve semantic anchors, normalize audio, generate or repair captions, burn or export captions, and verify timing and layout.
+
+This task stresses planning, tool use, audio-language grounding, and caption/video grounding. It does not test full dialogue rewriting, lip-sync generation, or synthetic narration.
+
+\paragraph{Reward rubric.}
+Task dimensions include pause cleanup, filler/dead-air reduction, semantic anchor recall, anchor order, source fidelity, caption file validity, ASR token F1, timing-aware token F1, caption-speech consistency, caption layout, duplicate text rate, and LLM-assessed publishability. Semantic anchors and source fidelity are hard-to-hack because they depend on private transcript anchors and source matching. Caption timing, audio cleanup, and readability are hackable but bounded because over-deletion, muting, clipping, oversized captions, subject occlusion, and desynchronization are checked. LLM quality is soft/vibes and used as a minority signal paired with hard caps. The verifier emits a dense subscore vector plus caps for fatal media, low semantic recall, weak pause removal, missing captions, low source match, weak caption layout, low LLM quality, or obvious non-source content. All rubric dimensions can enter the final training signal; with different weights they also provide denser, more step-level reward.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Agent & Model & \(r_{\mathrm{general}}\) & \(r_{\mathrm{task}}\) & Total \\
+\midrule
+Codex & GPT-5.5 & 0.816 & 0.787 & 0.792 \\
+Codex & GPT-5.4 & 0.745 & 0.798 & 0.787 \\
+Codex & GPT-5.4 Mini & 0.809 & 0.667 & 0.696 \\
+Claude Code & Opus 4.7 & 0.824 & 0.664 & 0.696 \\
+Claude Code & Sonnet 4.6 & 0.785 & 0.728 & 0.739 \\
+Claude Code & Haiku 4.5 & 0.796 & 0.645 & 0.550 \\
+Gemini CLI & 3.1 Pro Preview & 0.831 & 0.838 & 0.837 \\
+Gemini CLI & 3.1 Flash-Lite & 0.733 & 0.630 & 0.651 \\
+\bottomrule
+\end{tabular}
+\caption{Rough Interview Caption Cleanup results.}
+\end{table}
+
+\section{Metric for Data Selection}
+
+To check whether the tasks measure distinct abilities, I form one reward vector per task across the same ordered model set:
+\[
+( \text{GPT-5.5}, \text{GPT-5.4}, \text{GPT-5.4 Mini}, \text{Opus}, \text{Sonnet}, \text{Haiku}, \text{Gemini Pro}, \text{Gemini Flash} ).
+\]
+The total-reward vectors are:
+\[
+v_{\mathrm{sync}}=(0.576,0.525,0.605,0.589,0.677,0.512,0.633,0.471),
+\]
+\[
+v_{\mathrm{pancake}}=(0.805,0.939,0.865,0.808,0.767,0.366,0.350,0.550),
+\]
+\[
+v_{\mathrm{interview}}=(0.792,0.787,0.696,0.696,0.739,0.550,0.837,0.651).
+\]
+For tasks \(a,b\), compute centered cosine similarity:
+\[
+\rho(a,b)=\frac{(v_a-\bar v_a)\cdot(v_b-\bar v_b)}
+{\|v_a-\bar v_a\|_2\|v_b-\bar v_b\|_2},
+\]
+and normalized angular distance:
+\[
+d(a,b)=\frac{\arccos(\rho(a,b))}{\pi}.
+\]
+The measured correlations are \(0.162\), \(0.513\), and \(0.303\); the corresponding distances are \(0.448\), \(0.328\), and \(0.402\). The average dispersion is:
+\[
+D=\frac{2}{T(T-1)}\sum_{i<j}d(t_i,t_j)=0.393,\quad T=3.
+\]
+This supports keeping all three tasks: they rank models differently, with the pancake task most separated and the sync/interview pair only moderately correlated. The metric is useful for data selection because redundant tasks would produce nearly identical reward vectors, while separated vectors indicate different supervision signals.
+
+\section{Discussion}
+
+The results are intentionally not a pure leaderboard of model intelligence. They also reflect agent interface maturity, tool-use choices, prompt following, media-domain heuristics, and verifier failure modes. GPT-5.4 did best on the pancake task, Claude Sonnet led the sync task, and Gemini Pro led the interview task. That spread is useful for RL benchmark design: the tasks expose different bottlenecks rather than rewarding only one style of agent behavior. The hard caps were important in practice because several runs looked superficially valid but failed a core requirement such as source authenticity, semantic preservation, or sync repair.
+
+\appendix
+\section{CPU Sandbox Tool and Package List}
+\label{app:tools}
+
+Command-line tools: \texttt{ffmpeg}, \texttt{ffprobe}, \texttt{bash}, and \texttt{python >= 3.11}.
+
+Python packages: \texttt{numpy}, \texttt{scipy}, \texttt{opencv-python}, \texttt{moviepy}, \texttt{av}, \texttt{librosa}, \texttt{soundfile}, \texttt{pydub}, \texttt{scenedetect}, \texttt{faster-whisper}, \texttt{Pillow}, \texttt{scikit-image}, \texttt{pandas}, \texttt{pydantic}, \texttt{tqdm}, \texttt{ultralytics}, \texttt{colour-science}, \texttt{noisereduce}, \texttt{imageio}, \texttt{imageio-ffmpeg}, \texttt{matplotlib}, and \texttt{jsonschema}.
+
+\end{document}

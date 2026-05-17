@@ -1,0 +1,177 @@
+{
+  "source_files": [
+    "materials/source.mp4"
+  ],
+  "tools_used": [
+    "ffmpeg",
+    "ffprobe",
+    "python"
+  ],
+  "source_ranges": [
+    {
+      "label": "Pan butter",
+      "source_start": 183.0,
+      "source_end": 186.2,
+      "output_start": 0.0,
+      "output_end": 3.2,
+      "reason": "Quickly establish a greased warm pan before batter is added."
+    },
+    {
+      "label": "Pour and set",
+      "source_start": 189.0,
+      "source_end": 214.5,
+      "output_start": 3.2,
+      "output_end": 28.7,
+      "reason": "Shows ladling batter, spread, bubble formation, and the visual doneness cue."
+    },
+    {
+      "label": "Flip and finish second side",
+      "source_start": 233.0,
+      "source_end": 249.0,
+      "output_start": 28.7,
+      "output_end": 44.7,
+      "reason": "Keeps the overhead flip and browning action while avoiding face-only inserts."
+    },
+    {
+      "label": "Plate and syrup",
+      "source_start": 253.0,
+      "source_end": 264.5,
+      "output_start": 44.7,
+      "output_end": 56.2,
+      "reason": "Delivers plated result with butter and syrup for a complete social tutorial ending."
+    }
+  ],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 183.0,
+      "source_end": 264.5,
+      "output_start": 0.0,
+      "output_end": 56.2,
+      "parameters": {
+        "selected_ranges": [
+          [183.0, 186.2],
+          [189.0, 214.5],
+          [233.0, 249.0],
+          [253.0, 264.5]
+        ]
+      },
+      "reason": "Extract only the expert chef demonstration and omit the novice montage, banter, and end card."
+    },
+    {
+      "type": "crop",
+      "source_start": 183.0,
+      "source_end": 264.5,
+      "output_start": 0.0,
+      "output_end": 56.2,
+      "parameters": {
+        "process": "scale=-2:1280,crop=720:1280:(iw-720)/2:0,setsar=1",
+        "result_resolution": "720x1280",
+        "framing": "center portrait crop"
+      },
+      "reason": "Maintain a true vertical frame while keeping pan, pancake, hands, spatula, and plated result centered."
+    },
+    {
+      "type": "subtitle",
+      "source_start": 183.0,
+      "source_end": 264.5,
+      "output_start": 0.0,
+      "output_end": 56.2,
+      "parameters": {
+        "burned_in": true,
+        "style": "top-centered bold white text with translucent dark box"
+      },
+      "reason": "Turn the cooking sequence into a clear step-by-step standalone tutorial."
+    },
+    {
+      "type": "filter",
+      "source_start": 183.0,
+      "source_end": 264.5,
+      "output_start": 0.0,
+      "output_end": 56.2,
+      "parameters": {
+        "audio_filter": "loudnorm=I=-16:TP=-1.5:LRA=11"
+      },
+      "reason": "Preserve useful original audio while normalizing loudness and keeping peaks below clipping."
+    }
+  ],
+  "crop_decisions": [
+    {
+      "segments": [
+        "Pan butter",
+        "Pour and set",
+        "Flip and finish second side",
+        "Plate and syrup"
+      ],
+      "source_resolution": "1280x720",
+      "scaled_resolution": "2276x1280",
+      "crop": "720x1280 at centered x=778, y=0 after scaling",
+      "reason": "The chef demo is consistently staged around the center of frame, so one center crop preserves the tutorial action without pillarbox or blurred padding."
+    }
+  ],
+  "captions": [
+    {
+      "start": 0.0,
+      "end": 3.0,
+      "text": "Step 1: Melt butter in a warm pan"
+    },
+    {
+      "start": 3.2,
+      "end": 12.0,
+      "text": "Step 2: Ladle batter into the center"
+    },
+    {
+      "start": 12.0,
+      "end": 28.7,
+      "text": "Step 3: Cook until bubbles rise"
+    },
+    {
+      "start": 28.7,
+      "end": 38.5,
+      "text": "Step 4: Flip when edges look set"
+    },
+    {
+      "start": 38.5,
+      "end": 44.7,
+      "text": "Step 5: Brown the second side"
+    },
+    {
+      "start": 44.7,
+      "end": 56.2,
+      "text": "Step 6: Plate, butter, and syrup"
+    }
+  ],
+  "audio_adjustments": [
+    {
+      "filter": "loudnorm=I=-16:TP=-1.5:LRA=11",
+      "measured_result": {
+        "mean_volume_db": -19.9,
+        "max_volume_db": -1.3
+      },
+      "reason": "Keep speech and cooking sound usable without clipping."
+    }
+  ],
+  "checks_performed": [
+    "ffprobe -v error -print_format json -show_format -show_streams submit/output.mp4",
+    "ffmpeg -v error -i submit/output.mp4 -vf blackdetect=d=0.2:pic_th=0.98 -an -f null -",
+    "ffmpeg -v info -i submit/output.mp4 -vf freezedetect=n=-60dB:d=2 -an -f null - 2>&1 | grep freezedetect || true",
+    "ffmpeg -v info -i submit/output.mp4 -af silencedetect=n=-50dB:d=0.5,volumedetect -vn -f null -",
+    "sampled output frames every 10 seconds and reviewed work/final_contact.jpg",
+    "python OpenCV pass to count dark frames and estimate sampled frame-to-frame differences"
+  ],
+  "self_checks": {
+    "duration_seconds": 56.223,
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "resolution": "720x1280",
+    "display_aspect_ratio": "9:16",
+    "audio_present": true,
+    "blackdetect_hits": 0,
+    "freezedetect_hits": 0,
+    "dark_frames_under_mean10": 0,
+    "sampled_frame_diff_min": 0.16520833333333335,
+    "sampled_frame_diff_mean": 2.746832682291667,
+    "mean_volume_db": -19.9,
+    "max_volume_db": -1.3
+  }
+}

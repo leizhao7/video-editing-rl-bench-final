@@ -51,6 +51,8 @@ def transcode_clip(
         "veryfast",
         "-crf",
         "20",
+        "-bf",
+        "0",
         "-c:a",
         "aac",
         "-ar",
@@ -64,20 +66,55 @@ def transcode_clip(
     run_ffmpeg(args)
 
 
-def concat_mp4(parts: list[Path], output: Path, *, work_dir: Path) -> None:
+def concat_mp4(
+    parts: list[Path],
+    output: Path,
+    *,
+    work_dir: Path,
+    resolution: tuple[int, int] = (1280, 720),
+    fps: int = 30,
+) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
-    concat_file = work_dir / "concat.txt"
-    concat_file.write_text("".join(f"file '{part.resolve()}'\n" for part in parts))
+    width, height = resolution
+    args: list[str | Path] = []
+    for part in parts:
+        args += ["-i", part]
+    filters: list[str] = []
+    for index in range(len(parts)):
+        filters.append(
+            f"[{index}:v:0]scale={width}:{height}:force_original_aspect_ratio=decrease,"
+            f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1,"
+            f"fps={fps},setpts=PTS-STARTPTS[v{index}]"
+        )
+        filters.append(
+            f"[{index}:a:0]aresample=48000:async=1:first_pts=0,"
+            f"aformat=channel_layouts=stereo,asetpts=PTS-STARTPTS[a{index}]"
+        )
+    concat_inputs = "".join(f"[v{index}][a{index}]" for index in range(len(parts)))
+    filters.append(f"{concat_inputs}concat=n={len(parts)}:v=1:a=1[v][a]")
     run_ffmpeg(
         [
-            "-f",
-            "concat",
-            "-safe",
+            *args,
+            "-filter_complex",
+            ";".join(filters),
+            "-map",
+            "[v]",
+            "-map",
+            "[a]",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "20",
+            "-bf",
             "0",
-            "-i",
-            concat_file,
-            "-c",
-            "copy",
+            "-c:a",
+            "aac",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
             "-movflags",
             "+faststart",
             output,
@@ -85,14 +122,21 @@ def concat_mp4(parts: list[Path], output: Path, *, work_dir: Path) -> None:
     )
 
 
-def make_black_clip(output: Path, duration_sec: float, *, resolution: tuple[int, int] = (1280, 720), fps: int = 30) -> None:
+def make_solid_clip(
+    output: Path,
+    duration_sec: float,
+    *,
+    color: str = "black",
+    resolution: tuple[int, int] = (1280, 720),
+    fps: int = 30,
+) -> None:
     width, height = resolution
     run_ffmpeg(
         [
             "-f",
             "lavfi",
             "-i",
-            f"color=c=black:s={width}x{height}:r={fps}:d={duration_sec:.3f}",
+            f"color=c={color}:s={width}x{height}:r={fps}:d={duration_sec:.3f}",
             "-f",
             "lavfi",
             "-i",
@@ -105,6 +149,8 @@ def make_black_clip(output: Path, duration_sec: float, *, resolution: tuple[int,
             "veryfast",
             "-crf",
             "20",
+            "-bf",
+            "0",
             "-c:a",
             "aac",
             "-ar",
@@ -115,6 +161,10 @@ def make_black_clip(output: Path, duration_sec: float, *, resolution: tuple[int,
             output,
         ]
     )
+
+
+def make_black_clip(output: Path, duration_sec: float, *, resolution: tuple[int, int] = (1280, 720), fps: int = 30) -> None:
+    make_solid_clip(output, duration_sec, color="black", resolution=resolution, fps=fps)
 
 
 def make_freeze_clip(
@@ -151,6 +201,8 @@ def make_freeze_clip(
             "veryfast",
             "-crf",
             "20",
+            "-bf",
+            "0",
             "-c:a",
             "aac",
             "-ar",
@@ -170,6 +222,7 @@ def make_shifted_segment(
     start_sec: float,
     duration_sec: float,
     audio_delay_ms: int,
+    audio_gain_db: float = 0.0,
     resolution: tuple[int, int] = (1280, 720),
     fps: int = 30,
 ) -> None:
@@ -192,6 +245,8 @@ def make_shifted_segment(
             f"apad=pad_dur={advance_sec:.3f},"
             f"atrim=0:{duration_sec:.3f},asetpts=PTS-STARTPTS"
         )
+    if abs(float(audio_gain_db)) > 1e-6:
+        audio_filter += f",volume={float(audio_gain_db):+.2f}dB"
     run_ffmpeg(
         [
             "-ss",
@@ -212,6 +267,8 @@ def make_shifted_segment(
             "veryfast",
             "-crf",
             "20",
+            "-bf",
+            "0",
             "-c:a",
             "aac",
             "-ar",

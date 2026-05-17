@@ -1,0 +1,28 @@
+{
+  "required_spans": [
+    {
+      "id": "opening_clap_demo",
+      "interval": [
+        0.0,
+        31.5
+      ],
+      "weight": 0.35
+    },
+    {
+      "id": "middle_explanation",
+      "interval": [
+        31.5,
+        63.0
+      ],
+      "weight": 0.35
+    },
+    {
+      "id": "final_explanation",
+      "interval": [
+        63.0,
+        96.0
+      ],
+      "weight": 0.3
+    }
+  ]
+}

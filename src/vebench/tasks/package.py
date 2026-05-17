@@ -11,6 +11,7 @@ from ..media.ffmpeg import (
     make_black_clip,
     make_freeze_clip,
     make_shifted_segment,
+    make_solid_clip,
     transcode_clip,
 )
 from .base import TaskDefinition
@@ -98,6 +99,7 @@ def _write_common_files(task: TaskDefinition, *, public: Path, private: Path) ->
     )
     write_json(private / "ground_truth.json", task.ground_truth)
     write_json(private / "verifier_config.json", task.verifier_config)
+    (private / "hackability_analysis.md").write_text(_hackability_analysis_text(task).rstrip() + "\n")
 
     if task.task_id == "piecewise_av_sync_repair":
         write_json(private / "corruption_recipe.json", task.ground_truth["corruption_recipe"])
@@ -105,6 +107,88 @@ def _write_common_files(task: TaskDefinition, *, public: Path, private: Path) ->
     elif task.task_id == "rough_interview_caption_cleanup":
         write_json(private / "defect_map.json", task.ground_truth["defect_map"])
         write_json(private / "semantic_anchors.json", {"semantic_anchors": task.ground_truth["semantic_anchors"]})
+
+
+def _hackability_analysis_text(task: TaskDefinition) -> str:
+    if task.task_id == "piecewise_av_sync_repair":
+        return """# Hackability Analysis
+
+## Main hacking risks
+
+- Use one global audio shift instead of repairing the piecewise A/V offsets.
+- Delete difficult sections instead of repairing local sync, visual artifacts, duplicate inserts, or dead air.
+- Pad the output with black frames, frozen frames, silence, or unrelated filler to satisfy duration.
+- Mute, clip, or replace audio while appearing to pass basic loudness checks.
+- Claim repairs in `edit_decision.json` without producing the corresponding media changes.
+
+## Anti-hacking defenses
+
+- A/V sync is checked with private clean-reference anchors using both global and segmented residual scores.
+- Required-span coverage, source-time monotonicity, and duration gates penalize over-trimming.
+- Black-boundary, visual-artifact, freeze/dead-air, duplicate-insert, silence, clipping, and audio-quality checks detect common padding and deletion hacks.
+- Documentation is scored only as a small provenance signal and cannot rescue bad media.
+- Hard caps apply for missing output, invalid media, bad duration, low content preservation, low task score, remaining major artifacts, duplicate cleanup failure, or severe audio cleanup failure.
+
+## Hackability classification
+
+The sync and content-preservation dimensions are hard-to-hack because they depend on private clean-reference timing and private required spans. Audio and visual cleanup are hackable but bounded because local heuristics can be optimized narrowly, but severe silence, clipping, artifacts, and over-trimming are detectable. LLM judging, when enabled, is soft/vibes and used only as a minority or diagnostic signal.
+"""
+    if task.task_id == "expert_pancake_vertical_short":
+        return """# Hackability Analysis
+
+## Main hacking risks
+
+- Submit any vertical video, generated footage, or unrelated source material.
+- Use novice/blooper/reaction/end-card segments instead of the expert tutorial region.
+- Delete most of the source to avoid negative material while losing recipe steps.
+- Reorder clips into a plausible but non-causal montage.
+- Fake vertical format with black bars, blurred padding, or a decorative landscape container.
+- Add captions that are invisible, oversized, misplaced, generic, or unrelated to the visible action.
+- Claim source ranges and captions in JSON without rendering the corresponding edit.
+
+## Anti-hacking defenses
+
+- Source authenticity and frame matching penalize external, generated, or unmatched material.
+- Private allowed and negative source intervals score tutorial purity and penalize novice/blooper/end-card leakage.
+- Private visual step intervals require pan prep, batter, bubble cue, flip, and plating coverage.
+- Source-time monotonicity and step order checks penalize non-causal rearrangements.
+- Vertical reframe checks detect fake portrait padding and weak crops.
+- Caption visibility, step-caption completeness, caption/action alignment, and LLM caption rubrics bound caption hacks.
+- Hard caps apply for missing output, wrong aspect, fake vertical format, heavy negative material, external material, weak step coverage, severe order failure, missing captions, and weak semantic captions.
+
+## Hackability classification
+
+Source-region selection, visual step coverage, temporal order, and source authenticity are hard-to-hack because they depend on private intervals and source-frame matching. Caption and crop quality are hackable but bounded because readability, placement, fake padding, ROI containment, and visual/source consistency checks catch the main hacks. The LLM judge is soft/vibes and used as a minority semantic layer.
+"""
+    if task.task_id == "rough_interview_caption_cleanup":
+        return """# Hackability Analysis
+
+## Main hacking risks
+
+- Remove too much interview content to eliminate dead air while losing semantic anchors.
+- Generate generic, copied, badly timed, oversized, or visually occluding captions.
+- Submit a clean-looking output that no longer matches the original speech.
+- Mute, replace, or over-normalize audio to satisfy simple loudness or silence checks.
+- Use unrelated footage, synthetic narration, heavy overlays, or non-source material.
+- Write plausible edit notes without preserving the required explanation.
+
+## Anti-hacking defenses
+
+- Private semantic anchors and ASR/token matching check that key explanation content remains.
+- Inserted-pause cleanup is paired with duration, spoken-word density, source-fidelity, and semantic-preservation checks to prevent over-trimming.
+- Caption verification combines SRT validity, ASR token F1, timing-aware token F1, caption-speech consistency, and LLM text/layout checks.
+- Source matching and non-degenerate audio/video checks penalize unrelated footage, blank video, still frames, and source replacement.
+- Caption layout caps penalize oversized subtitles, subject occlusion, or unreadable burned-in text.
+- Hard caps apply for fatal media failures, low semantic recall, weak pause removal, missing captions, low source match, weak caption layout, low LLM quality, and obvious non-source/synthetic content.
+
+## Hackability classification
+
+Semantic anchor preservation and source fidelity are hard-to-hack because they depend on private transcript anchors and source matching. Speech cleanup, audio normalization, and caption timing are hackable but bounded because over-deletion, muting, clipping, and desynchronization are measurable. Caption visual layout and publishability remain soft/vibes, so LLM judging is a minority signal paired with caps.
+"""
+    return """# Hackability Analysis
+
+This task uses private ground-truth criteria, media-integrity checks, and hard caps to reduce reward hacking. See `verifier_config.json` for concrete reward dimensions and cap thresholds.
+"""
 
 
 def _generate_piecewise_av_source(task: TaskDefinition, *, source: Path, public: Path, private: Path) -> None:
@@ -127,21 +211,41 @@ def _generate_piecewise_av_source(task: TaskDefinition, *, source: Path, public:
 
         offsets = recipe["piecewise_audio_offsets"]
         freeze = recipe["freeze_splice"]
-        boundaries: list[tuple[float, float, int]] = []
+        flash = recipe.get("flash_insert")
+        duplicate = recipe.get("duplicate_insert")
+        gain_segments = recipe.get("audio_gain_segments", [])
+
+        split_points = {0.0, float(task.clip_duration_sec)}
         for zone in offsets:
-            start = float(zone["clean_start_sec"])
-            end = float(zone["clean_end_sec"])
-            delay = int(zone["audio_delay_ms"])
-            freeze_time = float(freeze["clean_time_sec"])
-            if start < freeze_time < end:
-                boundaries.append((start, freeze_time, delay))
-                boundaries.append((freeze_time, end, delay))
-            else:
-                boundaries.append((start, end, delay))
+            split_points.add(float(zone["clean_start_sec"]))
+            split_points.add(float(zone["clean_end_sec"]))
+        if freeze:
+            split_points.add(float(freeze["clean_time_sec"]))
+        if flash:
+            split_points.add(float(flash["clean_time_sec"]))
+        if duplicate:
+            split_points.add(float(duplicate["clean_start_sec"]))
+            split_points.add(float(duplicate["clean_end_sec"]))
+        for gain in gain_segments:
+            split_points.add(float(gain["clean_start_sec"]))
+            split_points.add(float(gain["clean_end_sec"]))
+
+        points = sorted(point for point in split_points if 0.0 <= point <= float(task.clip_duration_sec))
+
+        def offset_for(start: float) -> int:
+            for zone in offsets:
+                if float(zone["clean_start_sec"]) <= start < float(zone["clean_end_sec"]):
+                    return int(zone["audio_delay_ms"])
+            return 0
+
+        def gain_for(start: float) -> float:
+            for zone in gain_segments:
+                if float(zone["clean_start_sec"]) <= start < float(zone["clean_end_sec"]):
+                    return float(zone.get("gain_db", 0.0))
+            return 0.0
 
         part_index = 1
-        inserted_freeze = False
-        for start, end, delay in boundaries:
+        for start, end in zip(points, points[1:]):
             if end > start:
                 out = tmp / f"{part_index:03d}_content.mp4"
                 make_shifted_segment(
@@ -149,11 +253,19 @@ def _generate_piecewise_av_source(task: TaskDefinition, *, source: Path, public:
                     output=out,
                     start_sec=start,
                     duration_sec=end - start,
-                    audio_delay_ms=delay,
+                    audio_delay_ms=offset_for(start),
+                    audio_gain_db=gain_for(start),
                 )
                 parts.append(out)
                 part_index += 1
-            if not inserted_freeze and abs(end - float(freeze["clean_time_sec"])) < 0.001:
+
+            if flash and abs(end - float(flash["clean_time_sec"])) < 0.001:
+                out = tmp / f"{part_index:03d}_flash.mp4"
+                make_solid_clip(out, float(flash["duration_sec"]), color=str(flash.get("color", "white")))
+                parts.append(out)
+                part_index += 1
+
+            if freeze and abs(end - float(freeze["clean_time_sec"])) < 0.001:
                 out = tmp / f"{part_index:03d}_freeze.mp4"
                 make_freeze_clip(
                     source=clean,
@@ -164,7 +276,22 @@ def _generate_piecewise_av_source(task: TaskDefinition, *, source: Path, public:
                 )
                 parts.append(out)
                 part_index += 1
-                inserted_freeze = True
+
+            if duplicate and abs(end - float(duplicate["clean_end_sec"])) < 0.001:
+                for repeat_index in range(int(duplicate.get("repeat_count", 1))):
+                    out = tmp / f"{part_index:03d}_duplicate_{repeat_index}.mp4"
+                    dup_start = float(duplicate["clean_start_sec"])
+                    dup_end = float(duplicate["clean_end_sec"])
+                    make_shifted_segment(
+                        source=clean,
+                        output=out,
+                        start_sec=dup_start,
+                        duration_sec=dup_end - dup_start,
+                        audio_delay_ms=offset_for(dup_start),
+                        audio_gain_db=gain_for(dup_start),
+                    )
+                    parts.append(out)
+                    part_index += 1
 
         tail = tmp / f"{part_index:03d}_black_tail.mp4"
         make_black_clip(tail, recipe["black_tail_sec"])

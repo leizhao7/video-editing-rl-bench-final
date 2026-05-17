@@ -1,0 +1,25 @@
+# task_id	agent	model	effort	run_id
+piecewise_av_sync_repair	codex	gpt-5.5	medium	sync-rerun-gpt55-medium
+piecewise_av_sync_repair	codex	gpt-5.4	medium	sync-rerun-gpt54-medium
+piecewise_av_sync_repair	codex	gpt-5.4-mini	medium	sync-rerun-gpt54mini-medium
+piecewise_av_sync_repair	claude	claude-opus-4-7	medium	sync-rerun-claude-opus47-medium
+piecewise_av_sync_repair	claude	claude-sonnet-4-6	medium	sync-rerun-claude-sonnet46-medium
+piecewise_av_sync_repair	claude	claude-haiku-4-5	medium	sync-rerun-claude-haiku45-medium
+piecewise_av_sync_repair	gemini	gemini-3.1-pro-preview	medium	sync-rerun-gemini31pro-medium
+piecewise_av_sync_repair	gemini	gemini-3.1-flash-lite	medium	sync-rerun-gemini31flashlite-medium
+expert_pancake_vertical_short	codex	gpt-5.5	medium	pancake-final-20260517-medium-gpt55
+expert_pancake_vertical_short	codex	gpt-5.4	medium	pancake-final-20260517-medium-gpt54
+expert_pancake_vertical_short	codex	gpt-5.4-mini	medium	pancake-final-20260517-medium-gpt54mini
+expert_pancake_vertical_short	claude	claude-opus-4-7	medium	pancake-final-20260517-medium-claude-opus
+expert_pancake_vertical_short	claude	claude-sonnet-4-6	medium	pancake-final-20260517-medium-claude-sonnet
+expert_pancake_vertical_short	claude	claude-haiku-4-5	medium	pancake-final-20260517-medium-claude-haiku
+expert_pancake_vertical_short	gemini	gemini-3.1-pro-preview	medium	pancake-final-20260517-medium-gemini25pro
+expert_pancake_vertical_short	gemini	gemini-3.1-flash-lite	medium	pancake-final-20260517-medium-gemini31flashlite
+rough_interview_caption_cleanup	codex	gpt-5.5	medium	final_interview_gpt55_medium
+rough_interview_caption_cleanup	codex	gpt-5.4	medium	final_interview_gpt54_medium
+rough_interview_caption_cleanup	codex	gpt-5.4-mini	medium	final_interview_gpt54mini_medium
+rough_interview_caption_cleanup	claude	claude-opus-4-7	medium	final_interview_claude_opus47_medium
+rough_interview_caption_cleanup	claude	claude-sonnet-4-6	medium	final_interview_claude_sonnet46_medium
+rough_interview_caption_cleanup	claude	claude-haiku-4-5	medium	final_interview_claude_haiku45_medium
+rough_interview_caption_cleanup	gemini	gemini-3.1-pro-preview	medium	final_interview_gemini31pro_preview_medium
+rough_interview_caption_cleanup	gemini	gemini-3.1-flash-lite	medium	final_interview_gemini31flash_lite_medium

@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-*/
 venv/
 .pytest_cache/
 .mypy_cache/
@@ -9,34 +10,43 @@ venv/
 
 # Local secrets
 .env
+.env.*
+!.env.example
+.secrets/
 *.pem
 *.key
 
-# Generated benchmark data and agent artifacts
-runs/
+# Local scratch data and credential-bearing agent state
 submissions/
-reports/*.tsv
-reports/*.json
-reports/*.csv
 data/raw/
 data/generated/
-tasks/*/public/materials/
-tasks/*/private/
+tmp_sync_files/
+runs/**/workspace/_logs/native_sessions/
+runs/**/workspace/work/
+runs/**/*.outer.log
+runs/**/*.prepare.log
+runs/**/run_command.log
+runs/**/verify_command.log
+runs/**/verify_llm*.log
+runs/**/workspace/_logs/*.log
+runs/**/workspace/*.mp4
+runs/**/workspace/*.mov
+runs/**/workspace/*.wav
+runs/**/workspace/*.png
+runs/**/workspace/*.jpg
+runs/**/workspace/*.jpeg
+runs/**/workspace/*.txt
 
-# Media artifacts
-*.mp4
-*.mov
-*.mkv
-*.avi
-*.wav
-*.mp3
-*.aac
-*.flac
-*.srt
-*.ass
+# Build/cache products
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
 
-# Reports/build products
-report/*.pdf
+# Report build products we do not need in git
 report/*.aux
 report/*.log
 report/*.out
@@ -46,4 +56,3 @@ report/*.toc
 .DS_Store
 .idea/
 .vscode/
-

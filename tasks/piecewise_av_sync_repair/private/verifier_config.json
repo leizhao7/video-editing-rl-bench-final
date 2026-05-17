@@ -1,0 +1,257 @@
+{
+  "aspect": "landscape_16_9",
+  "capability_mix": {
+    "does_not_target": [
+      "self_correction_from_intermediate_observations",
+      "vlm_endpoint_use",
+      "nle_scripting",
+      "generative_video_or_audio"
+    ],
+    "targets": [
+      "reasoning_over_a_plan",
+      "tool_use",
+      "multimodal_grounding"
+    ]
+  },
+  "content_full_credit_fraction": 0.9,
+  "duration_gate": [
+    88.0,
+    98.0
+  ],
+  "duration_target": [
+    90.0,
+    96.0
+  ],
+  "expected_sync_anchors": 12,
+  "general_weight": 0.2,
+  "general_weights": {
+    "r_artifact_completeness": 0.2,
+    "r_audio_quality": 0.25,
+    "r_format": 0.4,
+    "r_provenance_and_logs": 0.15
+  },
+  "hard_caps": {
+    "any_required_span_below_0_75": 0.7,
+    "audio_cleanup_below_0_40": 0.75,
+    "black_boundary_cleanup_below_0_50": 0.7,
+    "content_preservation_below_0_70": 0.6,
+    "duplicate_cleanup_below_0_50": 0.7,
+    "duration_outside_gate": 0.5,
+    "missing_audio_or_video": 0.25,
+    "missing_output_or_ffprobe": 0.0,
+    "required_span_coverage_below_0_85": 0.6,
+    "source_time_monotonicity_below_0_80": 0.65,
+    "task_below_0_30": 0.45,
+    "visual_artifact_cleanup_below_0_50": 0.7
+  },
+  "long_horizon_structure": {
+    "dependency_structure": [
+      {
+        "depends_on": [],
+        "id": "read_constraints",
+        "typical_tools": [
+          "Read"
+        ]
+      },
+      {
+        "depends_on": [
+          "read_constraints"
+        ],
+        "id": "probe_source_metadata",
+        "typical_tools": [
+          "ffprobe"
+        ]
+      },
+      {
+        "depends_on": [
+          "probe_source_metadata"
+        ],
+        "id": "sample_global_frames",
+        "typical_tools": [
+          "ffmpeg",
+          "opencv"
+        ]
+      },
+      {
+        "depends_on": [
+          "sample_global_frames"
+        ],
+        "id": "detect_boundary_padding",
+        "typical_tools": [
+          "python",
+          "opencv"
+        ]
+      },
+      {
+        "depends_on": [
+          "sample_global_frames"
+        ],
+        "id": "detect_visual_artifacts",
+        "typical_tools": [
+          "python",
+          "opencv"
+        ]
+      },
+      {
+        "depends_on": [
+          "probe_source_metadata"
+        ],
+        "id": "extract_audio",
+        "typical_tools": [
+          "ffmpeg"
+        ]
+      },
+      {
+        "depends_on": [
+          "extract_audio"
+        ],
+        "id": "analyze_audio_quality",
+        "typical_tools": [
+          "python",
+          "librosa",
+          "scipy"
+        ]
+      },
+      {
+        "depends_on": [
+          "sample_global_frames",
+          "extract_audio"
+        ],
+        "id": "find_multimodal_sync_anchors",
+        "typical_tools": [
+          "python",
+          "opencv",
+          "librosa"
+        ]
+      },
+      {
+        "depends_on": [
+          "find_multimodal_sync_anchors"
+        ],
+        "id": "choose_local_sync_zones",
+        "typical_tools": [
+          "python"
+        ]
+      },
+      {
+        "depends_on": [
+          "choose_local_sync_zones"
+        ],
+        "id": "estimate_local_audio_shifts",
+        "typical_tools": [
+          "python",
+          "scipy"
+        ]
+      },
+      {
+        "depends_on": [
+          "detect_boundary_padding",
+          "detect_visual_artifacts"
+        ],
+        "id": "choose_damage_removal_ranges",
+        "typical_tools": [
+          "python"
+        ]
+      },
+      {
+        "depends_on": [
+          "choose_damage_removal_ranges",
+          "estimate_local_audio_shifts"
+        ],
+        "id": "choose_preserved_content_timeline",
+        "typical_tools": [
+          "python"
+        ]
+      },
+      {
+        "depends_on": [
+          "analyze_audio_quality"
+        ],
+        "id": "choose_audio_cleanup_strategy",
+        "typical_tools": [
+          "ffmpeg",
+          "librosa"
+        ]
+      },
+      {
+        "depends_on": [
+          "choose_preserved_content_timeline",
+          "choose_audio_cleanup_strategy"
+        ],
+        "id": "render_repaired_output",
+        "typical_tools": [
+          "ffmpeg",
+          "python"
+        ]
+      },
+      {
+        "depends_on": [
+          "render_repaired_output"
+        ],
+        "id": "final_validation_and_documentation",
+        "typical_tools": [
+          "ffprobe",
+          "ffmpeg",
+          "python"
+        ]
+      }
+    ],
+    "expected_tool_calls": {
+      "counting_rule": "Count source probes, frame/audio sampling calls, custom analysis scripts, render calls, and final validation calls. One large ffmpeg command without observation-dependent diagnosis and planning is not a long-horizon solution.",
+      "range": [
+        28,
+        34
+      ],
+      "typical": 30
+    },
+    "genuinely_sequential_decisions": 15
+  },
+  "resolution": [
+    1280,
+    720
+  ],
+  "sync_segments": [
+    {
+      "id": "opening",
+      "interval": [
+        0.0,
+        24.0
+      ],
+      "weight": 0.25
+    },
+    {
+      "id": "middle_pre_splice",
+      "interval": [
+        24.0,
+        47.5
+      ],
+      "weight": 0.25
+    },
+    {
+      "id": "middle_post_splice",
+      "interval": [
+        47.5,
+        72.0
+      ],
+      "weight": 0.25
+    },
+    {
+      "id": "late",
+      "interval": [
+        72.0,
+        96.0
+      ],
+      "weight": 0.25
+    }
+  ],
+  "task_weight": 0.8,
+  "task_weights": {
+    "r_audio_cleanup": 0.08,
+    "r_av_sync_global": 0.18,
+    "r_av_sync_segmented": 0.22,
+    "r_black_boundary_cleanup": 0.06,
+    "r_content_preservation": 0.16,
+    "r_duplicate_or_bad_insert_cleanup": 0.12,
+    "r_visual_artifact_cleanup": 0.18
+  }
+}

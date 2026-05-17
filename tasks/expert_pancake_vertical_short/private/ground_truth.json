@@ -1,0 +1,95 @@
+{
+  "clip_end_sec": 294.0,
+  "clip_start_sec": 0.0,
+  "negative_intervals": [
+    {
+      "id": "amateur_montage",
+      "interval": [
+        0.0,
+        160.0
+      ]
+    },
+    {
+      "id": "end_card_or_post_tutorial",
+      "interval": [
+        278.0,
+        294.0
+      ]
+    }
+  ],
+  "allowed_tutorial_intervals": [
+    {
+      "id": "expert_tutorial",
+      "interval": [
+        160.0,
+        278.0
+      ]
+    }
+  ],
+  "required_steps": [
+    {
+      "id": "pan_butter",
+      "interval": [
+        170.0,
+        190.0
+      ],
+      "keywords": [
+        "butter",
+        "pan"
+      ],
+      "label": "grease pan with butter"
+    },
+    {
+      "id": "batter_pour",
+      "interval": [
+        190.0,
+        212.0
+      ],
+      "keywords": [
+        "batter",
+        "pour",
+        "swirl"
+      ],
+      "label": "pour or swirl batter"
+    },
+    {
+      "id": "bubble_cue",
+      "interval": [
+        212.0,
+        232.0
+      ],
+      "keywords": [
+        "bubble",
+        "bubbles"
+      ],
+      "label": "wait for bubbles"
+    },
+    {
+      "id": "flip",
+      "interval": [
+        232.0,
+        248.0
+      ],
+      "keywords": [
+        "flip",
+        "spatula"
+      ],
+      "label": "flip with spatula"
+    },
+    {
+      "id": "plate_finish",
+      "interval": [
+        248.0,
+        278.0
+      ],
+      "keywords": [
+        "plate",
+        "finish",
+        "syrup"
+      ],
+      "label": "plate and finish"
+    }
+  ],
+  "source_url": "https://www.youtube.com/watch?v=45V4r4duCLU",
+  "task_id": "expert_pancake_vertical_short"
+}

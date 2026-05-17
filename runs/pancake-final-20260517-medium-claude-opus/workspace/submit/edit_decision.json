@@ -1,0 +1,90 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "tools_used": ["ffmpeg", "ffprobe", "python", "librosa"],
+  "source_ranges": [
+    {
+      "label": "Chef intro at workbench",
+      "source_start": 165.0,
+      "source_end": 172.0,
+      "output_start": 0.0,
+      "output_end": 7.0,
+      "reason": "Frank Proto (Chef Instructor, ICE) introduces himself; clean establishing wide shot"
+    },
+    {
+      "label": "Butter the hot pan",
+      "source_start": 175.0,
+      "source_end": 185.0,
+      "output_start": 7.0,
+      "output_end": 17.0,
+      "reason": "Top-down pan close-up: butter placed in hot pan and melted"
+    },
+    {
+      "label": "Ladle in the batter",
+      "source_start": 187.0,
+      "source_end": 202.0,
+      "output_start": 17.0,
+      "output_end": 32.0,
+      "reason": "Chef pours pre-mixed batter from bowl/ladle into pan"
+    },
+    {
+      "label": "Cook until golden",
+      "source_start": 205.0,
+      "source_end": 220.0,
+      "output_start": 32.0,
+      "output_end": 47.0,
+      "reason": "Pancake cooks, bubbles form on surface, hand visible adjusting"
+    },
+    {
+      "label": "Plate and serve",
+      "source_start": 241.0,
+      "source_end": 254.0,
+      "output_start": 47.0,
+      "output_end": 60.0,
+      "reason": "Cooked golden pancake transferred from pan to plate"
+    }
+  ],
+  "crop_decisions": [
+    {
+      "segment": "c1 (intro)",
+      "filter": "crop=405:720:438:0,scale=1080:1920:flags=lanczos",
+      "reason": "Center crop of 1280x720 -> 9:16; chef is centered in this wide shot"
+    },
+    {
+      "segment": "c2-c5 (cooking + plating)",
+      "filter": "crop=405:720:600:0,scale=1080:1920:flags=lanczos",
+      "reason": "Right-shifted crop (offset 600) because the pan and plate in the top-down shots sit right-of-center; keeps pan, pancake, hands, and plated result inside the vertical frame"
+    }
+  ],
+  "captions": [
+    {"text": "Chef Frank Proto / Pancake Tutorial", "start": 0.3, "end": 7.0, "position": "top", "style": "white bold with black border"},
+    {"text": "Step 1 / Butter the hot pan", "start": 7.2, "end": 17.0, "position": "top", "style": "yellow step + white text"},
+    {"text": "Step 2 / Ladle in the batter", "start": 17.2, "end": 32.0, "position": "top", "style": "yellow step + white text"},
+    {"text": "Step 3 / Cook until golden", "start": 32.2, "end": 47.0, "position": "top", "style": "yellow step + white text"},
+    {"text": "Step 4 / Plate and serve", "start": 47.2, "end": 60.0, "position": "top", "style": "yellow step + white text"}
+  ],
+  "audio_adjustments": [
+    {
+      "type": "loudnorm",
+      "parameters": {"I": -16, "TP": -1.5, "LRA": 11},
+      "reason": "Normalize loudness for social-media playback, prevent clipping (TP -1.5 dBTP)"
+    }
+  ],
+  "self_checks": {
+    "ffprobe": "video=h264 1080x1920, audio=aac 48kHz stereo, duration=60.227s",
+    "duration_within_target": true,
+    "duration_seconds": 60.227,
+    "aspect": "9:16 portrait (true crop, no padding/bars/blur)",
+    "audio_peak_abs": 0.86,
+    "audio_rms": 0.111,
+    "silent_fraction": 0.035,
+    "clipping_detected": false,
+    "captions_burned_in": true,
+    "checks_performed": [
+      "ffprobe submit/output.mp4 (codec, resolution, duration)",
+      "sampled output frames at t=3, 22, 50 to verify captions and visible pan/chef/plate",
+      "librosa loudness check (max abs, RMS, silent fraction)",
+      "verified true 9:16 crop (no decorative padding)",
+      "verified expert-only source range (excluded 0-165s novice montage and 264+ banter/end-card)"
+    ]
+  }
+}

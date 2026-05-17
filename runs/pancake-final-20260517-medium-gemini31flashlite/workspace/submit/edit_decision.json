@@ -1,0 +1,30 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 210.0,
+      "source_end": 265.0,
+      "output_start": 0.0,
+      "output_end": 55.0,
+      "parameters": {"crop": "405:720:437:0", "scale": "720:1280"},
+      "reason": "Extract proficient pancake-making segment and crop to 9:16 aspect ratio."
+    },
+    {
+      "type": "subtitle",
+      "source_start": 0.0,
+      "source_end": 55.0,
+      "output_start": 0.0,
+      "output_end": 55.0,
+      "parameters": {"text_overlays": "sequential steps"},
+      "reason": "Add burned-in captions for step-by-step tutorial instructions."
+    }
+  ],
+  "tools_used": ["ffmpeg"],
+  "checks_performed": [
+    "ffprobe submit/output.mp4",
+    "checked video duration",
+    "checked aspect ratio",
+    "checked caption presence"
+  ]
+}

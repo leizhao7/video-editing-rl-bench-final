@@ -1,0 +1,157 @@
+{
+  "source_files": [
+    "materials/source.mp4"
+  ],
+  "source_analysis": {
+    "duration_seconds": 292.959,
+    "resolution": "1280x720",
+    "format": "16:9 landscape",
+    "codec": "H.264/AVC",
+    "audio": "AAC 48kHz stereo"
+  },
+  "expert_identification": {
+    "description": "Woman with long light brown/blonde hair, floral print top, cooking 3 pancakes simultaneously with smooth professional technique",
+    "source_time_range": "100-160 seconds",
+    "confidence": "High - demonstrates clear expert pancake-making skill with proper technique and multiple pancakes"
+  },
+  "operations": [
+    {
+      "type": "extract",
+      "source_start": 100.0,
+      "source_end": 160.0,
+      "output_duration": 60.0,
+      "parameters": {
+        "codec_copy": "H.264 and AAC passed through"
+      },
+      "reason": "Extract 60-second window containing expert pancake-making sequence from full source video"
+    },
+    {
+      "type": "crop",
+      "source_geometry": "1280x720",
+      "crop_region": {
+        "x": 437,
+        "y": 0,
+        "width": 405,
+        "height": 720
+      },
+      "aspect_ratio": "9:16",
+      "reason": "Convert landscape to portrait by center-cropping to 9:16 ratio, keeping cooking action (hands, pan, food) centered and visible"
+    },
+    {
+      "type": "scale",
+      "scale_from": "405x720",
+      "scale_to": "1080x1920",
+      "parameters": {
+        "filter": "scale=1080:1920",
+        "aspect_ratio": "9:16 maintained"
+      },
+      "reason": "Scale portrait crop to target 1080x1920 resolution for high-quality social media vertical video"
+    },
+    {
+      "type": "subtitle",
+      "captions": [
+        {
+          "text": "Prepare Batter",
+          "start": 0.0,
+          "end": 8.0,
+          "position": "bottom center",
+          "fontsize": 70,
+          "color": "white"
+        },
+        {
+          "text": "Pour Batter",
+          "start": 8.0,
+          "end": 18.0,
+          "position": "bottom center",
+          "fontsize": 70,
+          "color": "white"
+        },
+        {
+          "text": "Let Cook",
+          "start": 18.0,
+          "end": 32.0,
+          "position": "bottom center",
+          "fontsize": 70,
+          "color": "white"
+        },
+        {
+          "text": "Time to Flip!",
+          "start": 32.0,
+          "end": 42.0,
+          "position": "bottom center",
+          "fontsize": 70,
+          "color": "white"
+        },
+        {
+          "text": "Cook Until Golden",
+          "start": 42.0,
+          "end": 52.0,
+          "position": "bottom center",
+          "fontsize": 70,
+          "color": "white"
+        },
+        {
+          "text": "Serve & Enjoy!",
+          "start": 52.0,
+          "end": 60.0,
+          "position": "bottom center",
+          "fontsize": 70,
+          "color": "white"
+        }
+      ],
+      "reason": "Add burned-in captions breaking the pancake-making process into clear sequential steps"
+    },
+    {
+      "type": "audio",
+      "source_audio": "AAC 48kHz stereo",
+      "output_audio": "AAC 48kHz stereo 130kbps",
+      "parameters": {
+        "preservation": "Original cooking and dialogue audio kept throughout",
+        "normalization": "Maintains original loudness without clipping or artifacts"
+      },
+      "reason": "Preserve original cooking sounds and audio cues while ensuring quality audio output"
+    }
+  ],
+  "tools_used": [
+    "ffmpeg",
+    "ffprobe",
+    "python"
+  ],
+  "output_specifications": {
+    "file": "submit/output.mp4",
+    "resolution": "1080x1920",
+    "aspect_ratio": "9:16 portrait",
+    "codec": "H.264/AVC",
+    "bitrate": "2341 kbps",
+    "framerate": "23.98 fps",
+    "audio_codec": "AAC",
+    "audio_bitrate": "130 kbps",
+    "duration": "60.19 seconds",
+    "format": "MP4"
+  },
+  "checks_performed": [
+    "ffprobe source video duration and codec verification",
+    "Visual inspection of expert pancake-making sequence via sampled frames",
+    "Crop calculation for 9:16 portrait ratio from 16:9 landscape source",
+    "Portrait scaling verification (1080x1920 resolution achieved)",
+    "Caption timing and positioning verification in output",
+    "Audio codec and bitrate verification (AAC 48kHz stereo maintained)",
+    "Final output duration check (60.19s within 55-65s target)",
+    "Video codec verification (H.264 with high profile)",
+    "Aspect ratio verification (101:180 display ratio = 9:16 portrait)",
+    "No black bars or padding detected - true portrait crop applied",
+    "Pan, hands, spatula, and plated food visible in cropped frame"
+  ],
+  "task_compliance": {
+    "duration_target": "55-65 seconds",
+    "actual_duration": "60.19 seconds",
+    "duration_met": true,
+    "portrait_format": "9:16 (1080x1920)",
+    "true_crop_applied": true,
+    "captions_added": true,
+    "original_audio_preserved": true,
+    "no_external_content": true,
+    "export_format": "H.264/AAC MP4",
+    "all_requirements_met": true
+  }
+}

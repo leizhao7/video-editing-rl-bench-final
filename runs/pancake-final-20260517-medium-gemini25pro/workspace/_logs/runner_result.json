@@ -1,0 +1,10 @@
+{
+  "agent": "gemini",
+  "duration_sec": 292.718,
+  "ended_at": "2026-05-17T16:08:04.107185+00:00",
+  "error": null,
+  "image": "video-bench-agent:cpu",
+  "returncode": 0,
+  "started_at": "2026-05-17T16:03:11.389442+00:00",
+  "stdout_stderr_log": "/root/video-editing-rl-bench/runs/pancake-final-20260517-medium-gemini25pro/workspace/_logs/docker_stdout_stderr.log"
+}

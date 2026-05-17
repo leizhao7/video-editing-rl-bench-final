@@ -1,0 +1,126 @@
+{
+  "source_files": [
+    "materials/source.mp4"
+  ],
+  "issues_found": [
+    "Source duration was 101.782s, longer than the required 88-98s deliverable window.",
+    "Black video at source 0.000-1.200s and 100.967-101.733s.",
+    "Silent/dead-air lead-in through about 5.018s and silent tail beginning around 100.436s.",
+    "Frozen/static damaged section detected at 32.300-37.300s, with mostly dead audio during the range.",
+    "Source audio measured about -27.0 LUFS integrated with true peaks above 0 dBFS, unsuitable for publishing without loudness repair."
+  ],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 0.0,
+      "source_end": 5.01846,
+      "output_start": null,
+      "output_end": null,
+      "parameters": {
+        "removed": true
+      },
+      "reason": "Removed black/silent setup and dead air before useful speech starts."
+    },
+    {
+      "type": "trim",
+      "source_start": 5.01846,
+      "source_end": 32.3,
+      "output_start": 0.0,
+      "output_end": 27.28154,
+      "parameters": {
+        "kept": true
+      },
+      "reason": "Kept tutorial opening, title, presenter explanation, and original order."
+    },
+    {
+      "type": "trim",
+      "source_start": 32.3,
+      "source_end": 37.3,
+      "output_start": null,
+      "output_end": null,
+      "parameters": {
+        "removed": true
+      },
+      "reason": "Removed detected frozen/static broken section and associated dead air."
+    },
+    {
+      "type": "trim",
+      "source_start": 37.3,
+      "source_end": 100.7,
+      "output_start": 27.28154,
+      "output_end": 90.68154,
+      "parameters": {
+        "kept": true
+      },
+      "reason": "Kept main tutorial continuation, clap demonstration, explanation of why creators clap before takes, timeline examples, and closing."
+    },
+    {
+      "type": "trim",
+      "source_start": 100.7,
+      "source_end": 101.782,
+      "output_start": null,
+      "output_end": null,
+      "parameters": {
+        "removed": true
+      },
+      "reason": "Removed black/silent tail."
+    },
+    {
+      "type": "concat",
+      "source_start": 5.01846,
+      "source_end": 100.7,
+      "output_start": 0.0,
+      "output_end": 90.682,
+      "parameters": {
+        "segments": [
+          [
+            5.01846,
+            32.3
+          ],
+          [
+            37.3,
+            100.7
+          ]
+        ],
+        "timestamp_repair": "setpts/asetpts reset before concat"
+      },
+      "reason": "Joined useful content in original order and reset timestamps to keep audio/video in sync after cutting the damaged range."
+    },
+    {
+      "type": "filter",
+      "source_start": 5.01846,
+      "source_end": 100.7,
+      "output_start": 0.0,
+      "output_end": 90.682,
+      "parameters": {
+        "video_filters": "fps=30, scale=1280:720, setsar=1, format=yuv420p",
+        "audio_filters": "loudnorm=I=-18:LRA=11:TP=-3, alimiter=limit=0.6:level=false, aresample=48000, aformat=fltp:stereo",
+        "video_codec": "libx264 H.264",
+        "audio_codec": "AAC 160k"
+      },
+      "reason": "Exported a standard 16:9 landscape MP4 and normalized original speech audio without clipping."
+    }
+  ],
+  "tools_used": [
+    "ffprobe",
+    "ffmpeg",
+    "python",
+    "cv2",
+    "PIL"
+  ],
+  "checks_performed": [
+    "ffprobe materials/source.mp4: source was 1280x720, 30 fps, H.264/AAC, 101.782s.",
+    "Extracted mono 16 kHz audio to work/audio.wav for silence and RMS inspection.",
+    "Sampled source frames at 1 fps and generated work/contact_sheet_all.jpg for visual inspection.",
+    "ffmpeg blackdetect on source: black_start 0.000 black_end 1.200; black_start 100.967 black_end 101.733.",
+    "ffmpeg freezedetect on source: freeze_start 32.300, freeze_duration 5.000, freeze_end 37.300.",
+    "ffmpeg silencedetect on source: lead-in silence through 5.018 and tail silence after 100.436, plus smaller pauses.",
+    "ffmpeg ebur128 on source: integrated loudness about -27.0 LUFS, true peak about +2.1 dBFS.",
+    "ffprobe submit/output.mp4: duration 90.682s, H.264 video, AAC stereo audio, 1280x720, SAR 1:1, DAR 16:9, 30 fps.",
+    "ffmpeg blackdetect submit/output.mp4: no black segments reported.",
+    "ffmpeg freezedetect submit/output.mp4: no freeze segments reported.",
+    "ffmpeg ebur128 submit/output.mp4: integrated loudness -20.5 LUFS, LRA 6.5 LU, true peak -1.9 dBFS.",
+    "Python/OpenCV sampled 91 output frames at 1 fps: no black sampled seconds and no repeated adjacent sampled seconds.",
+    "Python decoded output audio to PCM: sample peak 0.7866 and RMS 0.0664, confirming audio is present and not sample-clipped."
+  ]
+}

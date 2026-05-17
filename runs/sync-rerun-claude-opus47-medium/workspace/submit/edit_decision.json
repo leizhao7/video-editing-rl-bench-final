@@ -1,0 +1,83 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "tools_used": ["ffmpeg", "ffprobe", "python", "librosa", "cv2"],
+  "issues_found": [
+    "Black/empty frames at source start (0.0-1.5s) and tail (101.0-101.78s)",
+    "Sustained dead-air silence around 49.0-51.0s (RMS below -180 dB for ~1.5s)",
+    "Pre-roll title/intro graphics 0-4s not part of the tutorial body",
+    "Speech loudness uneven across the clip (varied from -45 dB to -22 dB RMS)"
+  ],
+  "segments": [
+    {
+      "label": "tutorial_part_1",
+      "source_start": 4.0,
+      "source_end": 49.0,
+      "output_start": 0.0,
+      "output_end": 45.0,
+      "reason": "Tutorial body after intro graphics; includes clap demonstration and explanation of why creators clap before takes."
+    },
+    {
+      "label": "tutorial_part_2",
+      "source_start": 51.0,
+      "source_end": 100.0,
+      "output_start": 45.0,
+      "output_end": 94.0,
+      "reason": "Continuation of tutorial after the dead-air gap, through end of useful content before tail black."
+    }
+  ],
+  "removed_damage_ranges": [
+    {
+      "label": "head_black_and_intro_graphics",
+      "source_start": 0.0,
+      "source_end": 4.0,
+      "reason": "Black frames followed by branded title sequence; not tutorial content."
+    },
+    {
+      "label": "dead_air_silence",
+      "source_start": 49.0,
+      "source_end": 51.0,
+      "reason": "Sustained near-total silence (RMS ~ -180 dB) constitutes dead air / unusable section."
+    },
+    {
+      "label": "tail_black",
+      "source_start": 100.0,
+      "source_end": 101.782,
+      "reason": "Trailing black/empty frames after content ends."
+    }
+  ],
+  "local_audio_shifts_ms": [],
+  "audio_filters": [
+    {
+      "name": "loudnorm",
+      "params": "I=-16:TP=-1.5:LRA=11",
+      "reason": "Normalize speech loudness to -16 LUFS with -1.5 dBTP ceiling; prevents clipping without muting or replacing original audio."
+    }
+  ],
+  "operations": [
+    {"type": "trim", "source_start": 4.0, "source_end": 49.0, "output_start": 0.0, "output_end": 45.0, "reason": "Keep tutorial part 1"},
+    {"type": "trim", "source_start": 51.0, "source_end": 100.0, "output_start": 45.0, "output_end": 94.0, "reason": "Keep tutorial part 2"},
+    {"type": "concat", "parameters": {"n": 2}, "reason": "Join the two kept segments in order"},
+    {"type": "filter", "parameters": {"audio": "loudnorm=I=-16:TP=-1.5:LRA=11"}, "reason": "Speech loudness normalization"},
+    {"type": "other", "parameters": {"video_codec": "libx264", "audio_codec": "aac", "size": "1280x720", "fps": 30, "pix_fmt": "yuv420p", "sar": "1:1"}, "reason": "Encode to required output spec"}
+  ],
+  "checks_performed": [
+    "ffprobe materials/source.mp4 -> duration 101.78s, h264 1280x720 30fps, aac 48k stereo",
+    "Extracted 2 fps frames; mean-brightness scan flagged black frames at 0.0-1.5s and 101.0-101.5s",
+    "Generated contact sheet to visually verify intro graphics, speaker on red BG, slides, and B-roll positions",
+    "librosa RMS scan in 0.5s windows located dead-air silence at 49.5-50.5s and confirmed loudness variability across clip",
+    "ffprobe submit/output.mp4 -> duration 94.000s (within 88-98s gate, within 90-96s target)",
+    "Verified output streams: h264 1280x720 30/1 fps, aac 2ch 48kHz",
+    "Square pixels (SAR 1:1, DAR 16:9) preserved from source"
+  ],
+  "self_checks": {
+    "duration_sec": 94.0,
+    "resolution": [1280, 720],
+    "fps": 30,
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "audio_channels": 2,
+    "aspect": "16:9",
+    "duration_within_gate": true,
+    "duration_within_target": true
+  }
+}

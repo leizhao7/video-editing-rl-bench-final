@@ -1,0 +1,10 @@
+{
+  "agent": "claude",
+  "duration_sec": 413.06,
+  "ended_at": "2026-05-17T11:32:12.952510+00:00",
+  "error": null,
+  "image": "video-bench-agent:cpu",
+  "returncode": 137,
+  "started_at": "2026-05-17T11:25:19.892711+00:00",
+  "stdout_stderr_log": "/root/video-editing-rl-bench/runs/final_interview_claude_sonnet46_medium/workspace/_logs/docker_stdout_stderr.log"
+}

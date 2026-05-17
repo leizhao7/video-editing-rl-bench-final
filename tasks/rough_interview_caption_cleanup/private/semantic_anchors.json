@@ -1,0 +1,56 @@
+{
+  "semantic_anchors": [
+    {
+      "id": "leader_hiring_gen_z",
+      "phrases": ["hiring gen z", "hiring gen zee", "gen z"]
+    },
+    {
+      "id": "thrive_motivation_goals",
+      "phrases": ["thrive stay motivated", "stay motivated", "achieve their goals", "thrive"]
+    },
+    {
+      "id": "strengths_weaknesses_frame",
+      "phrases": ["strengths and weaknesses", "biggest weakness", "perfectionist"]
+    },
+    {
+      "id": "strengths_have_liabilities",
+      "phrases": ["strengths often have liability", "strengths often have", "liability"]
+    },
+    {
+      "id": "confidence_arrogance_context",
+      "phrases": ["confident", "arrogant", "wrong context"]
+    },
+    {
+      "id": "weaknesses_silver_linings",
+      "phrases": ["weaknesses also have", "silver linings", "server linings"]
+    },
+    {
+      "id": "chronically_disorganized",
+      "phrases": ["chronically disorganized", "disorganized"]
+    },
+    {
+      "id": "systems_do_not_stick",
+      "phrases": ["system", "worked for like a week", "back to being disorganized"]
+    },
+    {
+      "id": "context_it_depends",
+      "phrases": ["it depends", "answer is it depends", "context"]
+    },
+    {
+      "id": "characteristics_strength_or_weakness",
+      "phrases": ["characteristics", "huge strengths", "huge weaknesses"]
+    },
+    {
+      "id": "careful_labeling_generations",
+      "phrases": ["label people or generations", "strong or weak", "stronger weak"]
+    },
+    {
+      "id": "gen_z_activist",
+      "phrases": ["very activist", "activist"]
+    },
+    {
+      "id": "hated_jobs_silence",
+      "phrases": ["hated their jobs", "suffered in silence"]
+    }
+  ]
+}

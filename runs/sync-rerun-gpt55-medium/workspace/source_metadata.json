@@ -1,0 +1,8 @@
+{
+  "clip_end_sec": 100.0,
+  "clip_start_sec": 4.0,
+  "expected_public_material": "materials/source.mp4",
+  "source_url_hidden_from_agent": true,
+  "source_worker": "worker_7",
+  "task_id": "piecewise_av_sync_repair"
+}

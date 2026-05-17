@@ -8,8 +8,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from ..media.captions import contact_sheet_base64
-from .common import clamp01
+from ..media.captions import contact_sheet_base64, frame_base64
+from .common import clamp01, parse_srt
 
 
 def maybe_run_llm_judge(
@@ -40,6 +40,23 @@ def maybe_run_llm_judge(
     if output_sheet:
         user_content.append({"type": "input_text", "text": "Output contact sheet:"})
         user_content.append({"type": "input_image", "image_url": f"data:image/jpeg;base64,{output_sheet}"})
+    if task_id == "rough_interview_caption_cleanup":
+        for idx, time_sec in enumerate(_caption_layout_sample_times(workspace), start=1):
+            frame = frame_base64(workspace / "submit" / "output.mp4", time_sec=time_sec)
+            if not frame:
+                continue
+            image_data, _width, _height = frame
+            user_content.append({"type": "input_text", "text": f"Output caption layout sample {idx} at {time_sec:.2f}s:"})
+            user_content.append({"type": "input_image", "image_url": f"data:image/jpeg;base64,{image_data}"})
+    if task_id == "expert_pancake_vertical_short":
+        for idx, sample in enumerate(_caption_transition_sample_times(workspace, edit_decision), start=1):
+            for label, time_sec in sample:
+                frame = frame_base64(workspace / "submit" / "output.mp4", time_sec=time_sec)
+                if not frame:
+                    continue
+                image_data, _width, _height = frame
+                user_content.append({"type": "input_text", "text": f"Pancake caption/action sample {idx} {label} at {time_sec:.2f}s:"})
+                user_content.append({"type": "input_image", "image_url": f"data:image/jpeg;base64,{image_data}"})
 
     try:
         parsed = openai_json_request(
@@ -211,18 +228,26 @@ def _parse_json_object(text: str) -> dict[str, Any]:
 def _task_rubric(task_id: str) -> dict[str, Any]:
     if task_id == "expert_pancake_vertical_short":
         return {
-            "keys": ["tutorial_completeness", "continuity_pacing", "mobile_readability", "prompt_fit"],
+            "keys": [
+                "step_caption_completeness",
+                "caption_visual_alignment",
+                "mobile_caption_readability",
+                "tutorial_naturalness",
+                "prompt_fit",
+            ],
             "weights": {
-                "tutorial_completeness": 0.45,
-                "continuity_pacing": 0.25,
-                "mobile_readability": 0.20,
+                "step_caption_completeness": 0.30,
+                "caption_visual_alignment": 0.25,
+                "mobile_caption_readability": 0.20,
+                "tutorial_naturalness": 0.15,
                 "prompt_fit": 0.10,
             },
             "questions": [
-                "Does the output clearly teach the five-step pancake process as a standalone short?",
-                "Does it flow naturally without confusing jumps, repeated shots, or rushed audio?",
-                "Are framing and captions usable on a phone?",
-                "Does it feel like an expert tutorial rather than a comedy blooper montage?",
+                "Do the captions break the pancake method into the expected tutorial arc: grease/butter pan, pour or swirl batter, wait for bubbles, flip with spatula, and plate or finish?",
+                "Around caption changes, does the visible action match the step named by the caption?",
+                "Are captions appropriately sized and placed for a phone, without covering faces, hands, pan, pancake, spatula, or plated result?",
+                "Does the edit flow naturally as a standalone tutorial rather than a blooper, joke, or unrelated montage?",
+                "Does the output follow the prompt, including true vertical framing and no external footage/music/narration?",
             ],
         }
     if task_id == "piecewise_av_sync_repair":
@@ -237,6 +262,33 @@ def _task_rubric(task_id: str) -> dict[str, Any]:
                 "Does the output look and sound naturally synchronized around claps, plosives, and gestures?",
                 "Does it preserve the tutorial explanation in coherent order?",
                 "Are pacing, cuts, audio level, and visual presentation publishable?",
+            ],
+        }
+    if task_id == "rough_interview_caption_cleanup":
+        return {
+            "keys": [
+                "semantic_completion",
+                "meaning_order_preservation",
+                "edit_naturalness",
+                "caption_text_accuracy_sync",
+                "caption_visual_layout",
+                "publishability",
+            ],
+            "weights": {
+                "semantic_completion": 0.30,
+                "meaning_order_preservation": 0.20,
+                "edit_naturalness": 0.20,
+                "caption_text_accuracy_sync": 0.15,
+                "caption_visual_layout": 0.10,
+                "publishability": 0.05,
+            },
+            "questions": [
+                "Does the clip preserve a coherent, self-contained interview idea?",
+                "Does it keep the speaker's meaning and argument order intact without misleading reordering?",
+                "Does the speech edit feel natural after pause/repeat cleanup?",
+                "Do the captions match the spoken words closely enough and appear timed to speech?",
+                "Are burned-in captions appropriately sized and placed, without covering the speaker's face or making the interview hard to watch?",
+                "Is the final clip publishable as a polished educational interview excerpt?",
             ],
         }
     return {
@@ -278,3 +330,96 @@ def _evidence_text(
         + ", ".join(rubric["keys"])
         + '. Also include "major_failures" as an array of strings and "rationale" as one concise sentence.'
     )
+
+
+def _caption_layout_sample_times(workspace: Path, *, max_frames: int = 5) -> list[float]:
+    entries = parse_srt(workspace / "submit" / "captions.srt")
+    if not entries:
+        return []
+    cue_times = sorted(
+        {
+            round((float(entry["start"]) + float(entry["end"])) / 2.0, 2)
+            for entry in entries
+            if float(entry.get("end", 0.0)) > float(entry.get("start", 0.0))
+        }
+    )
+    if len(cue_times) <= max_frames:
+        return cue_times
+    positions = [0.08, 0.28, 0.50, 0.72, 0.92]
+    selected = [cue_times[min(len(cue_times) - 1, max(0, round((len(cue_times) - 1) * position)))] for position in positions]
+    deduped: list[float] = []
+    for time_sec in selected:
+        if all(abs(time_sec - kept) > 0.75 for kept in deduped):
+            deduped.append(time_sec)
+    return deduped[:max_frames]
+
+
+def _caption_transition_sample_times(
+    workspace: Path,
+    edit_decision: dict[str, Any],
+    *,
+    max_cues: int = 4,
+) -> list[list[tuple[str, float]]]:
+    cue_times = _caption_layout_sample_times(workspace, max_frames=max_cues)
+    if not cue_times:
+        cue_times = _edit_decision_caption_times(edit_decision, max_cues=max_cues)
+    output_path = workspace / "submit" / "output.mp4"
+    duration = _probe_duration_seconds(output_path)
+    samples: list[list[tuple[str, float]]] = []
+    for time_sec in cue_times[:max_cues]:
+        samples.append(
+            [
+                ("before", max(0.0, time_sec - 0.35)),
+                ("at", max(0.0, time_sec)),
+                ("after", min(duration, time_sec + 0.35) if duration > 0 else time_sec + 0.35),
+            ]
+        )
+    return samples
+
+
+def _edit_decision_caption_times(edit_decision: dict[str, Any], *, max_cues: int) -> list[float]:
+    captions = edit_decision.get("captions")
+    if not isinstance(captions, list):
+        return []
+    times: list[float] = []
+    for item in captions:
+        if not isinstance(item, dict):
+            continue
+        start = item.get("start", item.get("output_start"))
+        end = item.get("end", item.get("output_end"))
+        if isinstance(start, (int, float)) and isinstance(end, (int, float)) and end > start:
+            times.append(round((float(start) + float(end)) / 2.0, 2))
+        elif isinstance(start, (int, float)):
+            times.append(round(float(start) + 0.5, 2))
+    times = sorted(set(times))
+    if len(times) <= max_cues:
+        return times
+    positions = [0.12, 0.38, 0.64, 0.88]
+    return [times[min(len(times) - 1, max(0, round((len(times) - 1) * position)))] for position in positions[:max_cues]]
+
+
+def _probe_duration_seconds(path: Path) -> float:
+    if not path.exists():
+        return 0.0
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                str(path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        return max(0.0, float(result.stdout.strip() or 0.0))
+    except Exception:  # noqa: BLE001
+        return 0.0

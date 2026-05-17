@@ -1,0 +1,295 @@
+{
+  "aspect": "portrait_9_16",
+  "duration_gate": [
+    50.0,
+    70.0
+  ],
+  "duration_target": [
+    55.0,
+    65.0
+  ],
+  "min_height": 720,
+  "general_weight": 0.2,
+  "task_weight": 0.8,
+  "llm_weight": 0.15,
+  "capability_targets": {
+    "primary": [
+      "multimodal_grounding",
+      "reasoning_over_a_plan"
+    ],
+    "secondary": [
+      "tool_use_for_delivery",
+      "self_correction_from_observations"
+    ],
+    "not_primary": [
+      "a_v_sync_repair",
+      "multi_source_editing",
+      "object_removal_or_inpainting",
+      "super_resolution_or_denoising",
+      "frame_interpolation",
+      "complex_motion_graphics",
+      "reference_based_color_grading"
+    ]
+  },
+  "long_horizon_structure": {
+    "genuinely_sequential_decisions": 6,
+    "decision_count_range": [
+      6,
+      6
+    ],
+    "expected_tool_calls": {
+      "typical": 12,
+      "range": [
+        9,
+        15
+      ],
+      "counting_rule": "Count media probes, frame/audio sampling calls, custom analysis scripts, render passes, and verification probes. A single ffmpeg command without prior observation/planning does not count as long-horizon."
+    },
+    "dependency_structure": [
+      {
+        "id": "probe_and_sample_source",
+        "decision": "Confirm source metadata and create enough visual samples to understand the clip.",
+        "depends_on": [],
+        "typical_tools": [
+          "ffprobe",
+          "ffmpeg",
+          "python"
+        ]
+      },
+      {
+        "id": "select_expert_region",
+        "decision": "Reject novice/blooper/reaction/end-card material and select the expert tutorial region.",
+        "depends_on": [
+          "probe_and_sample_source"
+        ],
+        "typical_tools": [
+          "frame_inspection",
+          "optional_vlm"
+        ]
+      },
+      {
+        "id": "map_recipe_steps",
+        "decision": "Identify the ordered visual cooking actions that should appear in the tutorial.",
+        "depends_on": [
+          "select_expert_region"
+        ],
+        "typical_tools": [
+          "ffmpeg",
+          "frame_inspection"
+        ]
+      },
+      {
+        "id": "build_edit_plan",
+        "decision": "Choose source ranges, pacing, portrait crop strategy, and concise captions for a compact 55-65 second edit.",
+        "depends_on": [
+          "map_recipe_steps"
+        ],
+        "typical_tools": [
+          "python",
+          "edit_decision_json",
+          "frame_sampling"
+        ]
+      },
+      {
+        "id": "render_vertical_short",
+        "decision": "Render the vertical edit with selected trims, crop, captions, and audio normalization.",
+        "depends_on": [
+          "build_edit_plan"
+        ],
+        "typical_tools": [
+          "ffmpeg",
+          "moviepy"
+        ]
+      },
+      {
+        "id": "verify_and_patch",
+        "decision": "Probe and sample the rendered output, then patch the edit if duration, crop, step coverage, captions, or audio quality has a clear failure.",
+        "depends_on": [
+          "render_vertical_short"
+        ],
+        "typical_tools": [
+          "ffprobe",
+          "ffmpeg",
+          "python",
+          "opencv"
+        ]
+      }
+    ]
+  },
+  "general_weights": {
+    "r_format": 0.3,
+    "r_audio_quality": 0.2,
+    "r_video_quality": 0.2,
+    "r_source_authenticity": 0.15,
+    "r_provenance_and_logs": 0.15
+  },
+  "task_weights": {
+    "r_tutorial_segment_purity": 0.25,
+    "r_temporal_order": 0.2,
+    "r_visual_step_completeness": 0.2,
+    "r_caption_visual_alignment": 0.15,
+    "r_step_caption_completeness": 0.1,
+    "r_true_vertical_reframe": 0.1
+  },
+  "hard_caps": {
+    "missing_output_or_ffprobe": 0.0,
+    "missing_audio_or_video": 0.25,
+    "duration_outside_gate": 0.5,
+    "wrong_aspect_or_resolution_family": 0.35,
+    "fake_or_weak_vertical": 0.35,
+    "weak_vertical_reframe": 0.6,
+    "heavy_negative_material": 0.4,
+    "external_or_unmatched_material": 0.35,
+    "weak_visual_step_completeness": 0.55,
+    "severe_order_failure": 0.6,
+    "missing_or_invisible_captions": 0.7,
+    "weak_step_captions": 0.65
+  },
+  "reward_design": {
+    "final_formula": {
+      "hard_score": "0.20 * r_general + 0.80 * r_task",
+      "with_llm_judge": "0.85 * r_hard + 0.15 * r_llm",
+      "final_score": "min(final_before_caps, active_hard_caps)"
+    },
+    "r_general": {
+      "description": "Delivery, media integrity, and provenance checks shared across tasks.",
+      "components": {
+        "r_format": {
+          "weight": 0.3,
+          "verifies": "Playable 9:16 output, duration gate, expected codec/resolution family."
+        },
+        "r_audio_quality": {
+          "weight": 0.2,
+          "verifies": "Non-degenerate original audio with reasonable loudness and no clipping/silent padding."
+        },
+        "r_video_quality": {
+          "weight": 0.2,
+          "verifies": "Non-degenerate video integrity without black/blank/frozen output artifacts."
+        },
+        "r_source_authenticity": {
+          "weight": 0.15,
+          "verifies": "Output frames match the provided source and preserve a plausible source timeline."
+        },
+        "r_provenance_and_logs": {
+          "weight": 0.15,
+          "verifies": "Valid edit_decision.json, source-range consistency, run history, and transcript."
+        }
+      }
+    },
+    "r_task": {
+      "description": "Task-specific checks focused on selecting the expert tutorial segment and organizing it as a compact recipe short.",
+      "components": {
+        "r_tutorial_segment_purity": {
+          "weight": 0.25,
+          "verifies": "Uses the expert tutorial region and suppresses novice attempts, bloopers, reactions, and end-card material."
+        },
+        "r_temporal_order": {
+          "weight": 0.2,
+          "verifies": "Preserves source-time monotonicity and the cooking-step order."
+        },
+        "r_visual_step_completeness": {
+          "weight": 0.2,
+          "verifies": "Covers the required visual cooking actions: pan prep, batter, bubbles, flip, and plated finish."
+        },
+        "r_caption_visual_alignment": {
+          "weight": 0.15,
+          "verifies": "Captions are visible near the matching visual action, using metadata when present and visual fallback otherwise."
+        },
+        "r_step_caption_completeness": {
+          "weight": 0.1,
+          "verifies": "Burned-in captions describe a coherent step-by-step method."
+        },
+        "r_true_vertical_reframe": {
+          "weight": 0.1,
+          "verifies": "A real portrait crop/reframe keeps the cooking subject visible without black or blurred padding."
+        }
+      }
+    },
+    "r_llm": {
+      "weight_if_available": 0.15,
+      "model_default": "gpt-5.5",
+      "rubric_weights": {
+        "step_caption_completeness": 0.3,
+        "caption_visual_alignment": 0.25,
+        "mobile_caption_readability": 0.2,
+        "tutorial_naturalness": 0.15,
+        "prompt_fit": 0.1
+      },
+      "role": "Semantic judge for caption/action consistency, phone readability, tutorial naturalness, and prompt fit."
+    }
+  },
+  "reward_hacking_mitigations": [
+    {
+      "hack": "Submit any portrait video or synthetic/generated footage.",
+      "defense": [
+        "source_match_fraction",
+        "r_source_authenticity",
+        "external_or_unmatched_material hard cap"
+      ]
+    },
+    {
+      "hack": "Use the wrong part of the source, such as novice failures, reactions, jokes, or end cards.",
+      "defense": [
+        "allowed_tutorial_intervals",
+        "negative_intervals",
+        "r_tutorial_segment_purity",
+        "heavy_negative_material hard cap"
+      ]
+    },
+    {
+      "hack": "Delete most content to avoid negative material while losing the recipe.",
+      "defense": [
+        "r_visual_step_completeness",
+        "pancake_visual_step_min",
+        "weak_visual_step_completeness hard cap",
+        "duration gate"
+      ]
+    },
+    {
+      "hack": "Reorder clips into a visually plausible but non-causal montage.",
+      "defense": [
+        "source_time_monotonicity",
+        "r_temporal_order",
+        "severe_order_failure hard cap"
+      ]
+    },
+    {
+      "hack": "Fake vertical format by centering landscape video over black bars or blurred padding.",
+      "defense": [
+        "top_bottom_black_padding_ratio",
+        "top_bottom_blur_padding_ratio",
+        "landscape_blur_padding_ratio",
+        "fake_or_weak_vertical hard cap"
+      ]
+    },
+    {
+      "hack": "Add captions that exist in metadata but are invisible, huge, misplaced, or unrelated to the action.",
+      "defense": [
+        "caption_visual_presence",
+        "r_caption_technical_quality",
+        "r_caption_visual_alignment",
+        "missing_or_invisible_captions hard cap",
+        "LLM caption/action rubric when enabled"
+      ]
+    },
+    {
+      "hack": "Claim good edits in JSON without actually rendering them.",
+      "defense": [
+        "edit_media_consistency",
+        "frame matching against output",
+        "r_provenance_and_logs only partial credit",
+        "LLM judge instructed not to reward unsupported claims"
+      ]
+    },
+    {
+      "hack": "Pad duration with silence, black frames, frozen frames, or unrelated filler.",
+      "defense": [
+        "duration target/gate",
+        "audio_quality",
+        "video_integrity",
+        "tutorial_impurity_ratio",
+        "negative/external material caps"
+      ]
+    }
+  ]
+}

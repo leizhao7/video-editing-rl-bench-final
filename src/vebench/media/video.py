@@ -47,7 +47,7 @@ def video_stats(path: Path, *, sample_fps: float = 2.0) -> dict[str, Any]:
         small = cv2.resize(gray, (96, 54), interpolation=cv2.INTER_AREA)
         if prev_small is not None:
             diff = float(np.mean(np.abs(small.astype(np.float32) - prev_small.astype(np.float32))))
-            if diff < 1.2:
+            if diff < 0.25:
                 frozen_run += 1
                 max_frozen_run = max(max_frozen_run, frozen_run)
             else:

@@ -1,0 +1,73 @@
+{
+  "source_files": [
+    "materials/source.mp4"
+  ],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 1.2,
+      "source_end": 32.3,
+      "output_start": 0.0,
+      "output_end": 31.1,
+      "parameters": {
+        "removed_ranges": [
+          [
+            0.0,
+            1.2
+          ]
+        ]
+      },
+      "reason": "Kept the opening tutorial content after removing the black leader at the start."
+    },
+    {
+      "type": "trim",
+      "source_start": 37.3,
+      "source_end": 98.8,
+      "output_start": 31.1,
+      "output_end": 92.6,
+      "parameters": {
+        "removed_ranges": [
+          [
+            32.3,
+            37.3
+          ],
+          [
+            98.8,
+            101.782
+          ]
+        ]
+      },
+      "reason": "Removed a frozen/repeated screenshot section and the trailing dead air/black tail while preserving the tutorial's original order."
+    },
+    {
+      "type": "filter",
+      "source_start": 1.2,
+      "source_end": 98.8,
+      "output_start": 0.0,
+      "output_end": 92.6,
+      "parameters": {
+        "video": [
+          "scale=1280:720",
+          "setsar=1"
+        ],
+        "audio": [
+          "loudnorm=I=-16:TP=-1.5:LRA=11:linear=true"
+        ]
+      },
+      "reason": "Standardized the export to 1280x720 square-pixel MP4 and normalized speech loudness without clipping."
+    }
+  ],
+  "tools_used": [
+    "ffmpeg",
+    "ffprobe",
+    "python"
+  ],
+  "checks_performed": [
+    "ffprobe submit/output.mp4 confirmed H.264 video, AAC audio, 1280x720, SAR 1:1, 30 fps, duration 92.6 s",
+    "ffmpeg volumedetect on submit/output.mp4 reported mean_volume -21.5 dB and max_volume -0.6 dB",
+    "ffmpeg blackdetect on submit/output.mp4 returned no black spans",
+    "ffmpeg freezedetect on submit/output.mp4 returned no frozen spans",
+    "ffmpeg silencedetect on submit/output.mp4 showed only natural pauses, with the intended dead-air and static-shot sections removed",
+    "sampled output frames across the timeline to confirm the tutorial content remains in original order"
+  ]
+}

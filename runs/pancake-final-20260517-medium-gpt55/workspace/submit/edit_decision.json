@@ -1,0 +1,155 @@
+{
+  "source_files": [
+    "materials/source.mp4"
+  ],
+  "output_file": "submit/output.mp4",
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 165.0,
+      "source_end": 169.8,
+      "output_start": 0.0,
+      "output_end": 4.8,
+      "parameters": {
+        "crop": {
+          "source_width": 1280,
+          "source_height": 720,
+          "x": 438,
+          "y": 0,
+          "w": 405,
+          "h": 720
+        },
+        "scale": "720x1280",
+        "caption": "1. Heat a nonstick pan"
+      },
+      "reason": "Open the standalone tutorial on the expert chef and the hot pan setup."
+    },
+    {
+      "type": "trim",
+      "source_start": 171.0,
+      "source_end": 184.0,
+      "output_start": 4.8,
+      "output_end": 17.8,
+      "parameters": {
+        "crop": {
+          "source_width": 1280,
+          "source_height": 720,
+          "x": 320,
+          "y": 0,
+          "w": 405,
+          "h": 720
+        },
+        "scale": "720x1280",
+        "caption": "2. Melt butter across the surface"
+      },
+      "reason": "Show the expert buttering the nonstick pan before adding batter."
+    },
+    {
+      "type": "trim",
+      "source_start": 188.4,
+      "source_end": 202.8,
+      "output_start": 17.8,
+      "output_end": 32.2,
+      "parameters": {
+        "crop": {
+          "source_width": 1280,
+          "source_height": 720,
+          "x": 390,
+          "y": 0,
+          "w": 405,
+          "h": 720
+        },
+        "scale": "720x1280",
+        "caption": "3. Pour small rounds of batter"
+      },
+      "reason": "Show batter being portioned into the pan."
+    },
+    {
+      "type": "trim",
+      "source_start": 228.0,
+      "source_end": 240.5,
+      "output_start": 32.2,
+      "output_end": 44.7,
+      "parameters": {
+        "crop": {
+          "source_width": 1280,
+          "source_height": 720,
+          "x": 330,
+          "y": 0,
+          "w": 405,
+          "h": 720
+        },
+        "scale": "720x1280",
+        "caption": "4. Flip when the edges set"
+      },
+      "reason": "Skip inactive cooking time and show the pancakes ready to flip and browning."
+    },
+    {
+      "type": "trim",
+      "source_start": 241.0,
+      "source_end": 258.0,
+      "output_start": 44.7,
+      "output_end": 61.7,
+      "parameters": {
+        "crop": {
+          "source_width": 1280,
+          "source_height": 720,
+          "x": 475,
+          "y": 0,
+          "w": 405,
+          "h": 720
+        },
+        "scale": "720x1280",
+        "caption": "5. Plate and finish with syrup"
+      },
+      "reason": "Finish with the plated pancake result and syrup step."
+    },
+    {
+      "type": "filter",
+      "source_start": 165.0,
+      "source_end": 258.0,
+      "output_start": 0.0,
+      "output_end": 61.7,
+      "parameters": {
+        "video_filters": [
+          "true 405x720 portrait crop per cut",
+          "scale=720:1280",
+          "burned-in drawtext step captions",
+          "format=yuv420p"
+        ],
+        "audio_filters": [
+          "loudnorm=I=-16:TP=-1.5:LRA=11",
+          "alimiter=limit=0.95"
+        ],
+        "encoding": {
+          "video_codec": "libx264",
+          "crf": 20,
+          "preset": "medium",
+          "frame_rate": "24000/1001",
+          "audio_codec": "aac",
+          "audio_sample_rate": 48000,
+          "audio_bitrate": "160k"
+        }
+      },
+      "reason": "Create a portrait H.264/AAC social tutorial while preserving useful original audio."
+    }
+  ],
+  "tools_used": [
+    "ffprobe",
+    "ffmpeg",
+    "python",
+    "cv2"
+  ],
+  "checks_performed": [
+    "Detection: ffprobe materials/source.mp4 showed 1280x720 H.264 video, AAC stereo audio, and 293.083 second duration.",
+    "Detection: sampled source frames every 5 seconds and created work/contact/source_5s_sheet.jpg to locate the expert chef segment in the final third.",
+    "Detection: sampled 1 fps from 140-235 seconds and 220-285 seconds, confirming the proficient pancake-making sequence and excluding novice bloopers/end card material.",
+    "Planning: wrote work/edit_plan.md before final rendering with the five-step tutorial cut plan.",
+    "Tool execution: rendered submit/output.mp4 with ffmpeg trim/crop/scale/concat/drawtext/loudnorm/alimiter filters via work/render_tutorial.py.",
+    "Final validation: ffprobe submit/output.mp4 reports H.264 720x1280, 9:16 DAR, 23.976 fps, AAC LC stereo 48 kHz, duration 61.726 seconds.",
+    "Final validation: sampled output frames at 1 fps and inspected work/contact/output_1s_sheet.jpg for portrait crop, action visibility, captions, plated result, and no black padding.",
+    "Final validation: cv2 scan sampled 62 one-second frames; black_like_seconds=[], near_frozen_seconds=[], min_mean=95.39, min_std=42.10.",
+    "Final validation: ffmpeg volumedetect on output reported mean_volume=-19.0 dB and max_volume=-0.7 dB.",
+    "Final validation: ffmpeg silencedetect at noise=-45dB:d=1.0 reported no silence events in the final output."
+  ]
+}

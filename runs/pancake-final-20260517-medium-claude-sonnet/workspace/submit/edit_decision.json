@@ -1,0 +1,152 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "source_metadata": {
+    "duration_s": 293.083,
+    "resolution": "1280x720",
+    "fps": "24000/1001",
+    "video_codec": "h264",
+    "audio_codec": "aac"
+  },
+  "output_metadata": {
+    "duration_s": 55.765,
+    "resolution": "720x1280",
+    "aspect_ratio": "9:16",
+    "fps": "24000/1001",
+    "video_codec": "h264",
+    "audio_codec": "aac"
+  },
+  "portrait_crop": {
+    "method": "center crop from landscape source",
+    "source_crop_w": 405,
+    "source_crop_h": 720,
+    "source_crop_x": 430,
+    "source_crop_y": 0,
+    "scale_to": "720x1280",
+    "zoom_factor": 1.78,
+    "note": "405px wide crop from 1280px source preserves 9:16 aspect. Crop centered on chef and cooking action. No black bars or padding used."
+  },
+  "operations": [
+    {
+      "type": "trim+crop",
+      "source_start": 164.0,
+      "source_end": 168.5,
+      "output_start": 0.0,
+      "output_end": 4.547,
+      "parameters": {
+        "crop_x": 440,
+        "caption": "Frank Proto | Chef Instructor, ICE"
+      },
+      "reason": "Chef Frank Proto intro shot with name title — establishes expert context"
+    },
+    {
+      "type": "trim+crop",
+      "source_start": 173.5,
+      "source_end": 181.5,
+      "output_start": 4.547,
+      "output_end": 12.555,
+      "parameters": {
+        "crop_x": 430,
+        "caption": "Step 1: Heat pan & add butter"
+      },
+      "reason": "Top-down shot of chef adding butter to pan and heating — first cooking step"
+    },
+    {
+      "type": "trim+crop",
+      "source_start": 183.5,
+      "source_end": 189.5,
+      "output_start": 12.555,
+      "output_end": 18.561,
+      "parameters": {
+        "crop_x": 430,
+        "caption": "Step 2: Pour in your batter"
+      },
+      "reason": "Wide-to-top-down shot of batter being poured into the buttered pan"
+    },
+    {
+      "type": "trim+crop",
+      "source_start": 196.0,
+      "source_end": 207.0,
+      "output_start": 18.561,
+      "output_end": 29.614,
+      "parameters": {
+        "crop_x": 430,
+        "caption": "Step 3: Cook until bubbles form"
+      },
+      "reason": "Top-down shot of pancakes cooking in pan, bubbles visible, chef monitors"
+    },
+    {
+      "type": "trim+crop",
+      "source_start": 230.5,
+      "source_end": 240.5,
+      "output_start": 29.614,
+      "output_end": 39.666,
+      "parameters": {
+        "crop_x": 430,
+        "caption": "Step 4: Flip once — golden side up!"
+      },
+      "reason": "Top-down spatula flip of pancakes revealing golden-brown cooked side"
+    },
+    {
+      "type": "trim+crop",
+      "source_start": 247.0,
+      "source_end": 263.0,
+      "output_start": 39.666,
+      "output_end": 55.724,
+      "parameters": {
+        "crop_x": 430,
+        "caption": "Step 5: Plate & serve warm"
+      },
+      "reason": "Chef plates pancakes, adds butter and syrup, presents finished dish"
+    },
+    {
+      "type": "filter",
+      "output_start": 0.0,
+      "output_end": 55.765,
+      "parameters": {
+        "filter": "loudnorm",
+        "target_I": -16,
+        "target_TP": -1.5,
+        "target_LRA": 11,
+        "measured_I": -16.4,
+        "measured_TP": -1.0
+      },
+      "reason": "Normalize audio loudness to broadcast standard, prevent clipping"
+    },
+    {
+      "type": "subtitle",
+      "output_start": 0.0,
+      "output_end": 55.765,
+      "parameters": {
+        "method": "burned-in drawtext via ffmpeg",
+        "fontsize": 44,
+        "fontcolor": "white",
+        "background": "black@0.65",
+        "position": "bottom-center",
+        "captions": [
+          {"text": "Frank Proto | Chef Instructor, ICE", "start": 0.0, "end": 4.547},
+          {"text": "Step 1: Heat pan & add butter", "start": 4.547, "end": 12.555},
+          {"text": "Step 2: Pour in your batter", "start": 12.555, "end": 18.561},
+          {"text": "Step 3: Cook until bubbles form", "start": 18.561, "end": 29.614},
+          {"text": "Step 4: Flip once — golden side up!", "start": 29.614, "end": 39.666},
+          {"text": "Step 5: Plate & serve warm", "start": 39.666, "end": 55.765}
+        ]
+      },
+      "reason": "Sequential step captions break method into clear instructional segments"
+    }
+  ],
+  "tools_used": ["ffmpeg", "ffprobe", "python", "opencv (cv2)", "numpy"],
+  "checks_performed": [
+    "ffprobe source: 1280x720 H.264 AAC 293s",
+    "sampled 1fps frames (293 frames) and created contact sheets",
+    "visually identified expert chef section: Frank Proto from ICE, ~164-265s",
+    "identified 6 key cooking steps via frame inspection",
+    "verified crop: 405x720 center crop from 1280x720 source, no black bars",
+    "verified output resolution: 720x1280 (9:16 portrait)",
+    "verified output duration: 55.765s (within 55-65s target)",
+    "verified video codec: H.264 (libx264)",
+    "verified audio codec: AAC",
+    "checked audio loudness: I=-16.4 LUFS (target -16), TP=-1.0 dBFS (no clipping)",
+    "blackdetect: no black frames found in output",
+    "sampled output frames at 0.2fps — captions visible, portrait crop clean, no padding"
+  ]
+}
