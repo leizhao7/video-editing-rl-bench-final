@@ -9,5 +9,5 @@
   "run_id": "final_interview_claude_opus47_medium",
   "status": "scored",
   "task_id": "rough_interview_caption_cleanup",
-  "workspace": "/data/video-agent/final_interview_runs_abs/final_interview_claude_opus47_medium/workspace"
+  "workspace": "runs/final_interview_claude_opus47_medium/workspace"
 }

@@ -1,0 +1,36 @@
+# Work Transcript Summary
+
+- Inspected workspace files, tools, and the task prompt.
+- Probed `materials/source.mp4` with ffprobe:
+  - 1280x720
+  - H.264 video
+  - AAC stereo audio
+  - 211.125 s duration
+- Sampled frames at 1 fps and built a contact sheet to inspect the interview setup.
+- Installed and used local Whisper (`openai-whisper`) to transcribe the source audio.
+- Key transcript evidence:
+  - The interviewer asks what leaders should know to help Gen Z "thrive, stay motivated and achieve their goals."
+  - The speaker says, "I don't like the conversation of strengths and weaknesses."
+  - He explains that strengths can have liabilities, weaknesses can have silver linings, and traits depend on context.
+  - He concludes that people or generations should be labeled carefully because "the answer is it depends."
+- Chosen kept ranges:
+  - 33.44-49.50
+  - 50.86-60.70
+  - 72.02-86.56
+  - 97.30-105.24
+  - 159.30-179.74
+- Built `submit/captions.srt` from Whisper timestamps with simple wrapping and one caption per retained source segment.
+- First render attempt used an ffmpeg concat graph and produced an incorrect short cut, so I switched to a MoviePy base cut plus a simpler ffmpeg subtitle/loudness pass.
+- Final render checks on `submit/output.mp4`:
+  - ffprobe duration: 68.824 s
+  - H.264 video, AAC audio, 1280x720, 30 fps
+  - silence detection: no long silence events
+  - black detection: no black-frame events
+  - volumedetect: mean_volume -19.8 dB, max_volume -1.3 dB
+  - sampled frames: captions readable and shot continuity intact
+- Final files written:
+  - `submit/output.mp4`
+  - `submit/captions.srt`
+  - `submit/edit_decision.json`
+  - `submit/run_history.md`
+  - `submit/agent_transcript.md`

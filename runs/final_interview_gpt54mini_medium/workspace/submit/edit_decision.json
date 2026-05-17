@@ -1,0 +1,132 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "kept_ranges": [
+    {
+      "source_start": 33.44,
+      "source_end": 49.5,
+      "output_start": 0.0,
+      "output_end": 16.06
+    },
+    {
+      "source_start": 50.86,
+      "source_end": 60.7,
+      "output_start": 16.06,
+      "output_end": 25.9
+    },
+    {
+      "source_start": 72.02,
+      "source_end": 86.56,
+      "output_start": 25.9,
+      "output_end": 40.44
+    },
+    {
+      "source_start": 97.3,
+      "source_end": 105.24,
+      "output_start": 40.44,
+      "output_end": 48.38
+    },
+    {
+      "source_start": 159.3,
+      "source_end": 179.74,
+      "output_start": 48.38,
+      "output_end": 68.82
+    }
+  ],
+  "removed_defects_or_pauses": [
+    "Dropped the long interviewer preamble before the actual answer.",
+    "Removed the repeated strengths/weaknesses setup loop and the long business-card anecdote to keep the clip within 60-75 seconds.",
+    "Trimmed the dead air between answer beats by concatenating only the kept ranges."
+  ],
+  "transcript_evidence_for_kept_idea": "The retained lines explicitly ask how to help Gen Z thrive, stay motivated, and achieve goals, then argue that strengths and weaknesses depend on context and that people or generations should not be labeled as simply strong or weak.",
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 33.44,
+      "source_end": 49.5,
+      "output_start": 0.0,
+      "output_end": 16.06,
+      "parameters": {},
+      "reason": "Keep the lead question about helping young workers thrive and stay motivated."
+    },
+    {
+      "type": "trim",
+      "source_start": 50.86,
+      "source_end": 60.7,
+      "output_start": 16.06,
+      "output_end": 25.9,
+      "parameters": {},
+      "reason": "Preserve the speaker's framing that the bias is about strengths versus weaknesses."
+    },
+    {
+      "type": "trim",
+      "source_start": 72.02,
+      "source_end": 86.56,
+      "output_start": 25.9,
+      "output_end": 40.44,
+      "parameters": {},
+      "reason": "Keep the key explanation that strengths can have liabilities and weaknesses can have silver linings."
+    },
+    {
+      "type": "trim",
+      "source_start": 97.3,
+      "source_end": 105.24,
+      "output_start": 40.44,
+      "output_end": 48.38,
+      "parameters": {},
+      "reason": "Keep the context pivot that explains why a trait is not always good or bad."
+    },
+    {
+      "type": "trim",
+      "source_start": 159.3,
+      "source_end": 179.74,
+      "output_start": 48.38,
+      "output_end": 68.82,
+      "parameters": {},
+      "reason": "Keep the concluding principle about understanding characteristics in context and avoiding simplistic labels."
+    },
+    {
+      "type": "subtitle",
+      "parameters": {
+        "method": "Whisper base.en transcription with timestamps; one caption per retained source segment, wrapped to two lines max, shifted into final timeline, then burned in with ffmpeg subtitles."
+      },
+      "reason": "Burn readable captions for all spoken words in the retained ranges."
+    },
+    {
+      "type": "filter",
+      "parameters": {
+        "audio": "loudnorm=I=-16:TP=-1.5:LRA=11:linear=true",
+        "video": "subtitles burn-in with Arial-style white captions and black outline"
+      },
+      "reason": "Normalize speech level and make captions legible without decorative overlays."
+    }
+  ],
+  "caption_style": {
+    "font": "Arial fallback via DejaVu Sans",
+    "font_size": 28,
+    "primary_colour": "white",
+    "outline_colour": "black",
+    "back_colour": "semi-transparent black",
+    "alignment": "bottom-center",
+    "margin_v": 48
+  },
+  "subtitle_generation_method": "Whisper base.en timestamps were exported to SRT with one caption per retained source segment and simple line wrapping, then burned into the final render with ffmpeg subtitles.",
+  "audio_filters": [
+    "loudnorm=I=-16:TP=-1.5:LRA=11:linear=true"
+  ],
+  "tools_used": [
+    "ffprobe",
+    "ffmpeg",
+    "python",
+    "moviepy",
+    "whisper"
+  ],
+  "checks_performed": [
+    "ffprobe submit/output.mp4 confirmed H.264 video, AAC audio, 1280x720, 30 fps, 68.824 s duration",
+    "ffmpeg silencedetect on submit/output.mp4 produced no long silence events",
+    "ffmpeg blackdetect on submit/output.mp4 produced no black-frame events",
+    "ffmpeg volumedetect on submit/output.mp4 reported mean_volume -19.8 dB and max_volume -1.3 dB",
+    "sampled output frames and visually checked burned-in caption readability and shot continuity",
+    "verified captions.srt timing matches the stitched retained timeline"
+  ],
+  "post_first_export_change": "The initial ffmpeg-only concat export rendered incorrectly at about 22.7 seconds because of timestamp/concat handling. I replaced it with an exact MoviePy base cut followed by a straightforward ffmpeg subtitle and loudness pass, which produced the final 68.824-second file."
+}

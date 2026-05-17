@@ -46,8 +46,8 @@ report/
 ## Clone and Environment Setup
 
 ```bash
-git clone https://github.com/<owner>/video-editing-rl-bench.git
-cd video-editing-rl-bench
+git clone https://github.com/leizhao7/video-editing-rl-bench-final.git
+cd video-editing-rl-bench-final
 
 bash scripts/bootstrap_ubuntu.sh
 python3.11 -m venv .venv
@@ -184,6 +184,31 @@ The smoke agent intentionally submits a trivial synthetic video, so the score is
 python -m vebench.cli report --runs-dir runs --output reports/tasks_and_rubrics.tsv
 ```
 
+The TSV includes a `suspected_reward_hacking` flag and a `hackability_analysis_path` column. The full hackability analysis is not expanded inline in the TSV; it lives in each task package at `tasks/<task_id>/private/hackability_analysis.md`.
+
+Historical run videos are checked in under `runs/<run_id>/workspace/submit/output.mp4`. The corresponding submitted captions, edit decision JSON, run history, and transcript summary sit in the same `submit/` folder when the task produced them.
+
 ## Secret Hygiene
 
 The public release excludes `.env`, `.secrets/`, virtual environments, and raw native session stores that may contain account metadata or keys. Historical run folders keep the task workspaces, final submissions, run histories, agent transcript summaries, score files, and verifier-readable metadata needed to audit the benchmark results.
+
+## Task Package Structure
+
+Each task is released as `tasks/<task_id>/` with the same public/private split:
+
+```text
+tasks/<task_id>/
+  public/
+    prompt.md                    # task-specific prompt shown to the agent
+    tools.md                     # tool/package reference shown to the agent
+    source_metadata.json          # public metadata for the source material
+    output_specs.json             # required deliverables, duration/aspect gates, format expectations
+    edit_decision.schema.json     # JSON schema for submit/edit_decision.json
+    materials/source.mp4          # source video given to the agent
+  private/
+    ground_truth.json             # hidden task ground truth consumed by verifier code
+    verifier_config.json          # scoring weights, gates, thresholds, and caps
+    hackability_analysis.md       # task-specific reward-hacking risks and defenses
+```
+
+Some tasks include additional private verifier files. `piecewise_av_sync_repair/private/clean_reference.mp4` and `required_spans.json` support sync/content-preservation checks. `rough_interview_caption_cleanup/private/semantic_anchors.json`, `defect_map.json`, and `public_timeline.json` support semantic preservation and caption cleanup checks. The pancake task keeps private interval/coverage criteria in `ground_truth.json` and `verifier_config.json`.

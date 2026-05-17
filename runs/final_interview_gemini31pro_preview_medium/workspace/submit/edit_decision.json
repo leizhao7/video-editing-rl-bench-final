@@ -1,0 +1,76 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 37.98,
+      "source_end": 49.54,
+      "output_start": 0.0,
+      "output_end": 11.56,
+      "parameters": {},
+      "reason": "Kept the core interviewer question about how to help Gen Z thrive and stay motivated."
+    },
+    {
+      "type": "trim",
+      "source_start": 72.24,
+      "source_end": 105.40,
+      "output_start": 11.56,
+      "output_end": 44.72,
+      "parameters": {},
+      "reason": "Kept the start of the answer discussing how strengths have liability and weaknesses have silver linings, using being disorganized as an example. Skipped false starts and repeated phrase loops."
+    },
+    {
+      "type": "trim",
+      "source_start": 173.08,
+      "source_end": 181.08,
+      "output_start": 44.72,
+      "output_end": 52.72,
+      "parameters": {},
+      "reason": "Kept the conclusion that we must be careful labeling generations strong or weak because it depends on context. Skipped the long anecdote about the business card."
+    },
+    {
+      "type": "trim",
+      "source_start": 184.08,
+      "source_end": 197.40,
+      "output_start": 52.72,
+      "output_end": 66.04,
+      "parameters": {},
+      "reason": "Kept the final thought that Gen Z exhibits many same characteristics but are very activist."
+    },
+    {
+      "type": "concat",
+      "source_start": null,
+      "source_end": null,
+      "output_start": 0.0,
+      "output_end": 66.04,
+      "parameters": {"clips": 4},
+      "reason": "Concatenated the trimmed clips to form a cohesive, self-contained educational clip."
+    },
+    {
+      "type": "filter",
+      "source_start": null,
+      "source_end": null,
+      "output_start": 0.0,
+      "output_end": 66.04,
+      "parameters": {"filter": "loudnorm"},
+      "reason": "Normalized spoken audio so it is comfortably listenable without clipping or pumping."
+    },
+    {
+      "type": "subtitle",
+      "source_start": null,
+      "source_end": null,
+      "output_start": 0.0,
+      "output_end": 66.04,
+      "parameters": {"style": "Fontsize=24,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV=20", "file": "submit/captions.srt"},
+      "reason": "Added readable burned-in captions for all spoken words using Whisper-generated timestamps."
+    }
+  ],
+  "tools_used": ["ffmpeg", "python", "moviepy", "whisper"],
+  "checks_performed": [
+    "ffprobe to check duration (66.06s)",
+    "ffprobe to verify H.264 video codec and AAC audio codec",
+    "ffprobe to verify 1280x720 16:9 resolution",
+    "Whisper transcript reviewed and manually corrected (silver linings vs several linings)",
+    "Validated continuous audio stream without clipping using loudnorm"
+  ]
+}

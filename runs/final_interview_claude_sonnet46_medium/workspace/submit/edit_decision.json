@@ -1,0 +1,194 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "source_duration_s": 211.1,
+  "output_duration_s": 73.54,
+  "target_duration_range": "60-75s",
+
+  "transcript_evidence": {
+    "topic": "Helping young people (Gen Z) stay motivated and thrive at work",
+    "interviewer_question": "[41.4-49.5s] '...what have we got to know about them and do to make sure that they thrive, stay motivated and achieve their goals?'",
+    "core_argument": "[71.8-82.6s] 'I don't like the conversations of strengths and weaknesses because strengths often have liability... in the wrong context you're arrogant.'",
+    "weakness_example": "[83.7-89.9s] 'weaknesses also have silver linings. So for me, I'm chronically disorganized.'",
+    "story": "[102.7-131.8s] Networking event anecdote: lost a business card, could not follow up, found it two weeks later.",
+    "repeated_phrase_removed": "[131.9-135.3s] 'What this important piece of business would have led to because I lost the card.' — exact rephrasing of 127.9-131.3s.",
+    "punchline": "[139.1-147.1s] 'He wanted to work with me more because he thought I was busy.'",
+    "conclusion": "[148.7-160.5s] 'So strength or weakness, the answer is it depends... but not always is the point.'"
+  },
+
+  "removed_defects": [
+    {
+      "source_range": "0.0-41.4s",
+      "reason": "Interviewer speaking; context established from 41.4s only"
+    },
+    {
+      "source_range": "49.5-71.8s",
+      "reason": "False starts: 'This is my own bias. I don't like the conversation. My own bias. I don't like the conversation of strengths and weaknesses.' — repeated twice before the complete articulation begins at 71.8s; also dead air gaps at 50-53s and 55-66s"
+    },
+    {
+      "source_range": "89.9-102.7s",
+      "reason": "Long dead air (90-96s, 99-102s) plus redundant rumination 'Every system app works for a week then I'm back... for years I used to beat myself up'"
+    },
+    {
+      "source_range": "108.6-109.4s",
+      "reason": "Internal pause (0.8s) removed within networking-story segment"
+    },
+    {
+      "source_range": "116.7-117.5s",
+      "reason": "Internal pause (0.8s)"
+    },
+    {
+      "source_range": "131.8-135.8s",
+      "reason": "Phrase loop: 'What this important piece of business would have led to because I lost the card.' is a near-verbatim repeat of the preceding sentence"
+    },
+    {
+      "source_range": "138.3-139.1s",
+      "reason": "Internal pause (0.8s)"
+    },
+    {
+      "source_range": "147.1-148.7s",
+      "reason": "Dead air pause (1.3s)"
+    },
+    {
+      "source_range": "157.4-157.9s",
+      "reason": "Section-break freeze frame / micro-pause"
+    },
+    {
+      "source_range": "160.5-211.1s",
+      "reason": "Gen-Z section starts mid-thought and ends with an incomplete sentence at 211s (video cuts off); keeping only the self-contained preface argument preserves meaning"
+    }
+  ],
+
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 41.4, "source_end": 49.5,
+      "output_start": 0.0,  "output_end": 8.1,
+      "parameters": {},
+      "reason": "Interviewer question sets up the Gen Z / thriving at work topic"
+    },
+    {
+      "type": "trim",
+      "source_start": 71.8, "source_end": 78.4,
+      "output_start": 8.1,  "output_end": 14.7,
+      "parameters": {},
+      "reason": "Core premise: don't use strength/weakness labels — context determines outcome"
+    },
+    {
+      "type": "trim",
+      "source_start": 79.5, "source_end": 82.6,
+      "output_start": 14.7, "output_end": 17.8,
+      "parameters": {"internal_pause_removed": "78.4-79.5s"},
+      "reason": "Confidence → arrogance example; pause removed"
+    },
+    {
+      "type": "trim",
+      "source_start": 83.7, "source_end": 89.9,
+      "output_start": 17.8, "output_end": 24.0,
+      "parameters": {},
+      "reason": "Weaknesses also have silver linings — introduces personal disorganization example"
+    },
+    {
+      "type": "trim",
+      "source_start": 102.7, "source_end": 108.6,
+      "output_start": 24.0, "output_end": 29.9,
+      "parameters": {},
+      "reason": "Story setup: disorganization framed as context-dependent weakness"
+    },
+    {
+      "type": "trim",
+      "source_start": 109.4, "source_end": 116.7,
+      "output_start": 29.9, "output_end": 37.2,
+      "parameters": {"internal_pause_removed": "108.6-109.4s"},
+      "reason": "Networking event story: met impressed executive, given business card"
+    },
+    {
+      "type": "trim",
+      "source_start": 117.5, "source_end": 131.8,
+      "output_start": 37.2, "output_end": 51.5,
+      "parameters": {},
+      "reason": "Lost the card — contrast with organized person who would have followed up"
+    },
+    {
+      "type": "trim",
+      "source_start": 135.8, "source_end": 138.3,
+      "output_start": 51.5, "output_end": 54.0,
+      "parameters": {"removed_before": "131.8-135.8s repeated phrase loop"},
+      "reason": "Two weeks later found the card (resuming after removing repeated phrase)"
+    },
+    {
+      "type": "trim",
+      "source_start": 139.1, "source_end": 147.1,
+      "output_start": 54.0, "output_end": 62.0,
+      "parameters": {"internal_pause_removed": "138.3-139.1s"},
+      "reason": "Punchline: emailed him; he wanted to work together MORE thinking speaker was busy"
+    },
+    {
+      "type": "trim",
+      "source_start": 148.7, "source_end": 157.4,
+      "output_start": 62.0, "output_end": 70.7,
+      "parameters": {"internal_pause_removed": "147.1-148.7s"},
+      "reason": "Conclusion: strength or weakness depends on context; it IS a liability in general"
+    },
+    {
+      "type": "trim",
+      "source_start": 157.9, "source_end": 160.5,
+      "output_start": 70.7, "output_end": 73.3,
+      "parameters": {},
+      "reason": "Coda: 'but not always is the point' — closes the self-contained argument"
+    },
+    {
+      "type": "filter",
+      "source_start": 0, "source_end": 73.3,
+      "output_start": 0, "output_end": 73.3,
+      "parameters": {
+        "filter": "loudnorm",
+        "target_I": -16,
+        "target_TP": -1.5,
+        "target_LRA": 11,
+        "measured_I": -18.88,
+        "measured_LRA": 6.80,
+        "measured_TP": -0.84,
+        "mode": "two-pass linear normalization"
+      },
+      "reason": "Normalize spoken audio to EBU R128 target for comfortable listening"
+    },
+    {
+      "type": "subtitle",
+      "source_start": 0, "source_end": 73.3,
+      "output_start": 0, "output_end": 73.3,
+      "parameters": {
+        "method": "openai-whisper base model word-level timestamps mapped to output timeline",
+        "caption_style": "white text, black outline (Outline=2, Shadow=1), FontSize=28, center-bottom (Alignment=2, MarginV=30)",
+        "grouping": "max 6 words per caption, max 3.0s per caption, break at segment boundaries and pauses >0.8s",
+        "num_captions": 54
+      },
+      "reason": "Burned-in captions for accessibility; SRT saved separately"
+    }
+  ],
+
+  "audio_filters": [
+    "loudnorm=I=-16:TP=-1.5:LRA=11 (two-pass, linear mode)"
+  ],
+
+  "subtitle_generation_method": "openai-whisper 'base' model transcribed /workspace/work/audio.wav; word-level timestamps from Whisper segments mapped through source→output segment timeline; grouped into 54 caption chunks respecting segment boundaries",
+
+  "caption_style": "ASS subtitles: FontSize=28, PrimaryColour=white (#FFFFFF), OutlineColour=black (#000000), BorderStyle=1, Outline=2, Shadow=1, Alignment=2 (center-bottom), MarginV=30px",
+
+  "tools_used": ["ffmpeg", "ffprobe", "python", "openai-whisper", "librosa"],
+
+  "checks_performed": [
+    "ffprobe materials/source.mp4 — confirmed 211.1s, 1280x720, H.264, AAC stereo 48kHz",
+    "librosa RMS analysis — identified 33 silence regions >0.5s and 5 major section breaks (frozen frames at 36, 37, 66, 102, 157s in source)",
+    "Whisper ASR transcription — identified false start loop at 51-56s, phrase loop at 131.9-135.3s, dead air at 89.9-102.7s",
+    "Clip extraction with -t (duration) and setpts=PTS-STARTPTS — verified correct duration per clip",
+    "Concat + loudnorm two-pass — verified joined duration 73.33s",
+    "ffprobe submit/output.mp4 — duration=73.54s (within 60-75s target), H.264 1280x720 30fps, AAC 48kHz stereo",
+    "Frame sampling at 2fps — detected 0 black frames, 1 natural pause frame (not frozen content, speaker pausing at 59s output = 144s source)",
+    "SRT file: 54 captions, 216 lines, covering full output duration"
+  ],
+
+  "post_first_export_changes": [
+    "Fixed B-frame PTS issue: replaced -to with -t (duration) and added setpts=PTS-STARTPTS for accurate clip extraction — clip 09 was producing 16.8s video (2x expected) due to B-frame timestamp confusion with -to flag",
+    "Regenerated captions with segment-aware grouping to prevent words from different source segments merging into same caption line"
+  ]
+}

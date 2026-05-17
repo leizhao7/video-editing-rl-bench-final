@@ -1,0 +1,35 @@
+{
+  "source_files": ["materials/source.mp4"],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 24.740,
+      "source_end": 51.340,
+      "reason": "Keeping Gen Z intro segment"
+    },
+    {
+      "type": "trim",
+      "source_start": 53.660,
+      "source_end": 117.680,
+      "reason": "Keeping core argument about strengths/weaknesses"
+    },
+    {
+      "type": "trim",
+      "source_start": 163.000,
+      "source_end": 173.080,
+      "reason": "Connecting example"
+    },
+    {
+      "type": "trim",
+      "source_start": 183.000,
+      "source_end": 194.000,
+      "reason": "Conclusion of example"
+    }
+  ],
+  "tools_used": ["ffmpeg", "python"],
+  "checks_performed": [
+    "ffprobe submit/output.mp4",
+    "sampled frames",
+    "checked audio stream"
+  ]
+}

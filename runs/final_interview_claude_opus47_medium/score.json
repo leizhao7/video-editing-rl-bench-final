@@ -2,7 +2,7 @@
   "agent": "claude",
   "notes": [
     "restored from archived verified final_interview_scores_abs.tsv",
-    "formatted from existing VPS interview run; workspace=/data/video-agent/final_interview_runs_abs/final_interview_claude_opus47_medium/workspace; verify_logs=/data/video-agent/final_interview_verify_logs_abs"
+    "formatted from existing VPS interview run; workspace=runs/final_interview_claude_opus47_medium/workspace; verify_logs=/data/video-agent/final_interview_verify_logs_abs"
   ],
   "run_id": "final_interview_claude_opus47_medium",
   "scores": {

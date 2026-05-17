@@ -1,0 +1,143 @@
+{
+  "source_files": [
+    "materials/source.mp4"
+  ],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 38.24,
+      "source_end": 51.34,
+      "output_start": 0.0,
+      "output_end": 13.1,
+      "parameters": {
+        "kept_content": "Question about how a leader can help Gen Z thrive, stay motivated, and achieve goals."
+      },
+      "reason": "Provides a self-contained prompt for the answer."
+    },
+    {
+      "type": "trim",
+      "source_start": 56.88,
+      "source_end": 63.88,
+      "output_start": 13.1,
+      "output_end": 20.1,
+      "parameters": {
+        "kept_content": "Speaker frames the answer around not using simple strengths/weaknesses labels."
+      },
+      "reason": "Keeps the main answer while removing the false start from 51.34-56.88."
+    },
+    {
+      "type": "trim",
+      "source_start": 72.68,
+      "source_end": 87.2,
+      "output_start": 20.1,
+      "output_end": 34.62,
+      "parameters": {
+        "kept_content": "Strengths can become liabilities; weaknesses can have silver linings."
+      },
+      "reason": "Preserves the core explanation and removes the intervening interview cliche/pause."
+    },
+    {
+      "type": "trim",
+      "source_start": 148.64,
+      "source_end": 151.32,
+      "output_start": 34.62,
+      "output_end": 37.3,
+      "parameters": {
+        "kept_content": "Strength or weakness depends on context."
+      },
+      "reason": "Summarizes the skipped anecdote without changing the argument."
+    },
+    {
+      "type": "trim",
+      "source_start": 157.92,
+      "source_end": 160.12,
+      "output_start": 37.3,
+      "output_end": 39.5,
+      "parameters": {
+        "kept_content": "Not always is the point."
+      },
+      "reason": "Removes the frozen/silent pause found in the first validation pass."
+    },
+    {
+      "type": "trim",
+      "source_start": 160.12,
+      "source_end": 182.32,
+      "output_start": 39.5,
+      "output_end": 61.7,
+      "parameters": {
+        "kept_content": "Understand characteristics by context and avoid labeling people or generations as strong or weak."
+      },
+      "reason": "Completes the answer with the practical lesson for leading young people."
+    },
+    {
+      "type": "concat",
+      "source_start": 0.0,
+      "source_end": 0.0,
+      "output_start": 0.0,
+      "output_end": 61.734,
+      "parameters": {
+        "method": "Per-range H.264/PCM Matroska intermediates concatenated with ffmpeg concat demuxer"
+      },
+      "reason": "Avoids non-monotonic audio timestamps encountered in the first filter-concat export."
+    },
+    {
+      "type": "subtitle",
+      "source_start": 0.0,
+      "source_end": 0.0,
+      "output_start": 0.0,
+      "output_end": 61.7,
+      "parameters": {
+        "subtitle_file": "submit/captions.srt",
+        "generation_method": "OpenAI Whisper small model run locally in workspace, then manually selected and retimed SRT lines to match kept ranges",
+        "burn_in_filter": "ffmpeg subtitles",
+        "caption_style": "White Arial-like text, black semi-transparent boxed background, lower screen, 30px font"
+      },
+      "reason": "Adds readable burned-in captions for all kept spoken words and saves matching SRT timing."
+    },
+    {
+      "type": "filter",
+      "source_start": 0.0,
+      "source_end": 0.0,
+      "output_start": 0.0,
+      "output_end": 61.734,
+      "parameters": {
+        "video": "fps=30, scale=1280:720, format=yuv420p",
+        "audio": "loudnorm=I=-16:TP=-1.5:LRA=11, alimiter=limit=0.95, aformat=stereo, aresample=48000",
+        "codecs": "libx264 H.264, AAC 160k, 48 kHz"
+      },
+      "reason": "Meets delivery format and normalizes speech for comfortable playback without clipping."
+    }
+  ],
+  "removed_defects_or_pauses": [
+    "Removed early setup before the direct Gen Z leadership question.",
+    "Removed answer false start/repetition from 51.34-56.88.",
+    "Removed long business-card anecdote while retaining its summarized lesson.",
+    "Removed first-export frozen/silent interval around output 33.7-35.7 by cutting source 151.32-157.92."
+  ],
+  "transcript_evidence": [
+    "Question: what do leaders need to know and do to make Gen Z thrive, stay motivated, and achieve goals.",
+    "Answer: strengths often have liability and weaknesses also have silver linings.",
+    "Conclusion: understand characteristics in context and be careful labeling people or generations as strong or weak because the answer depends."
+  ],
+  "tools_used": [
+    "ffmpeg",
+    "ffprobe",
+    "python",
+    "openai-whisper"
+  ],
+  "checks_performed": [
+    "ffprobe -v error -print_format json -show_format -show_streams materials/source.mp4",
+    "ffmpeg silencedetect on source with noise=-35dB:d=0.45",
+    "sampled source frames at 1 fps and reviewed contact sheets",
+    "local Whisper transcription of extracted 16 kHz mono audio",
+    "first export ffprobe showed incorrect 25.56 second duration and non-monotonic audio timestamps",
+    "repaired concat using per-range intermediates; combined duration checked as 61.733 seconds",
+    "first repaired validation found freezedetect interval at 33.7-35.733 seconds; removed that pause and re-exported",
+    "final ffprobe submit/output.mp4: 61.734 seconds, 1280x720, H.264 High, AAC LC stereo 48 kHz",
+    "final silencedetect: only short pauses around 0.82-1.94 seconds, no long dead air",
+    "final blackdetect/freezedetect: no black or frozen intervals reported",
+    "final ebur128: integrated loudness -15.6 LUFS, true peak -0.9 dBFS",
+    "sampled final frames every 10 seconds and visually checked caption visibility"
+  ],
+  "post_first_export_change": "After the first export collapsed to 25.56 seconds from non-monotonic audio timestamps, I rebuilt clean intermediate clips. After the next validation found a 2.03 second frozen/silent interval, I added source 56.88-63.88 for duration and removed source 151.32-157.92, then remapped captions and exported the final 61.734 second file."
+}

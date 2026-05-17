@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "audio_filters": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "caption_style": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "checks_performed": {
+      "oneOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      ]
+    },
+    "final_checks": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "kept_segments": {
+      "items": {
+        "additionalProperties": true,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "output_end": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "output_start": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "source_end": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "source_start": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "source_start",
+          "source_end"
+        ],
+        "type": "object"
+      },
+      "minItems": 2,
+      "type": "array"
+    },
+    "removed_defects": {
+      "items": {
+        "additionalProperties": true,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "output_end": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "output_start": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "source_end": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "source_start": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "source_start",
+          "source_end"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "revision_notes": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "self_checks": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "source_evidence": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "minItems": 2,
+      "type": "array"
+    },
+    "source_files": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "subtitle_generation": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "tools_used": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "source_files",
+    "tools_used",
+    "checks_performed",
+    "kept_segments",
+    "removed_defects",
+    "caption_style",
+    "source_evidence",
+    "final_checks"
+  ],
+  "type": "object"
+}

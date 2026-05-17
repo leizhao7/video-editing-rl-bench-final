@@ -1,0 +1,158 @@
+{
+  "source_files": [
+    "materials/source.mp4"
+  ],
+  "operations": [
+    {
+      "type": "trim",
+      "source_start": 46.05,
+      "source_end": 49.71,
+      "output_start": 0.0,
+      "output_end": 3.66,
+      "parameters": {
+        "speaker": "interviewer"
+      },
+      "reason": "Keep a short setup that explicitly frames the clip around helping young employees thrive, stay motivated, and achieve goals."
+    },
+    {
+      "type": "trim",
+      "source_start": 72.69,
+      "source_end": 105.62,
+      "output_start": 3.66,
+      "output_end": 36.59,
+      "parameters": {
+        "speaker": "main speaker"
+      },
+      "reason": "Keep the cleanest explanation that strengths and weaknesses are contextual, including a short personal example and the line 'the reality is: it's context.'"
+    },
+    {
+      "type": "trim",
+      "source_start": 148.5,
+      "source_end": 159.51,
+      "output_start": 36.59,
+      "output_end": 47.6,
+      "parameters": {
+        "speaker": "main speaker"
+      },
+      "reason": "Return to the direct answer: traits can be liabilities, but the answer is context-dependent."
+    },
+    {
+      "type": "trim",
+      "source_start": 160.71,
+      "source_end": 180.3,
+      "output_start": 47.6,
+      "output_end": 67.19,
+      "parameters": {
+        "speaker": "main speaker"
+      },
+      "reason": "Keep the strongest educational takeaway about how the same characteristic can be a strength in one context and a weakness in another."
+    },
+    {
+      "type": "trim",
+      "source_start": 189.18,
+      "source_end": 196.02,
+      "output_start": 67.19,
+      "output_end": 74.03,
+      "parameters": {
+        "speaker": "main speaker"
+      },
+      "reason": "Close on the Gen Z-specific distinction that they share many prior traits but express them more activistly, without running into the source's cut-off ending."
+    },
+    {
+      "type": "filter",
+      "source_start": 0.0,
+      "source_end": 74.03,
+      "output_start": 0.0,
+      "output_end": 74.03,
+      "parameters": {
+        "audio_filters": [
+          "highpass=f=80",
+          "lowpass=f=12000",
+          "loudnorm=I=-16:LRA=11:TP=-1.5"
+        ]
+      },
+      "reason": "Normalize spoken dialogue to a comfortable, unclipped social-video level."
+    },
+    {
+      "type": "subtitle",
+      "source_start": 0.0,
+      "source_end": 74.03,
+      "output_start": 0.0,
+      "output_end": 74.03,
+      "parameters": {
+        "caption_style": {
+          "font": "Arial/DejaVuSans fallback",
+          "font_size": 28,
+          "alignment": "bottom-center",
+          "margin_v": 42,
+          "border_style": 4,
+          "back_color": "semi-transparent black",
+          "outline_color": "#202020"
+        }
+      },
+      "reason": "Burn in readable captions for every kept spoken line and save the same timings to SRT."
+    }
+  ],
+  "tools_used": [
+    "ffprobe",
+    "ffmpeg",
+    "python",
+    "moviepy",
+    "vosk",
+    "PIL"
+  ],
+  "kept_source_segments": [
+    [46.05, 49.71],
+    [72.69, 105.62],
+    [148.5, 159.51],
+    [160.71, 180.3],
+    [189.18, 196.02]
+  ],
+  "removed_defects_or_pauses": [
+    "Dropped the longer networking-business-card anecdote middle so the answer stayed focused on work traits and motivation.",
+    "Removed dead air and pause-heavy spans between the kept ranges.",
+    "Avoided the visible false-start fragment before the 'they exhibit many of the same characteristics' line.",
+    "Avoided the source ending where the speaker is cut off mid-thought."
+  ],
+  "transcript_evidence": [
+    "Question setup: 'make sure that they thrive, stay motivated, and achieve their goals.'",
+    "Core answer: 'I don't like the conversations of strengths and weaknesses... the reality is: it's context.'",
+    "Main takeaway: 'So strength or weakness? The answer is: it depends.'",
+    "Leadership framing: 'some of those same traits are huge strengths in certain contexts... and huge weaknesses in others.'",
+    "Gen Z distinction: 'They exhibit many of the same characteristics as the previous generation... they're very activist.'"
+  ],
+  "subtitle_generation_method": "Downloaded a local Vosk speech model into work/, generated word-timed transcripts, then manually cleaned the kept-line text and converted source timings to output-relative SRT timings in work/edit_assets.py.",
+  "caption_style": {
+    "font_size": 28,
+    "alignment": "bottom-center",
+    "background_box": true,
+    "outline": 1,
+    "margin_v": 42
+  },
+  "first_export_issue_and_repair": {
+    "issue": "The first ffmpeg concat-based export had broken timestamps: the video stream reported ~112 seconds while the audible edit was ~74 seconds.",
+    "repair": "Rebuilt the assembly with MoviePy subclips to preserve exact segment durations, then re-rendered the final H.264/AAC file with ffmpeg for audio normalization and burned-in captions."
+  },
+  "checks_performed": [
+    "ffprobe -v error -print_format json -show_format -show_streams materials/source.mp4",
+    "ffmpeg -y -i materials/source.mp4 -af silencedetect=noise=-35dB:d=0.5 -f null -",
+    "ffmpeg -y -i materials/source.mp4 -vn -ac 1 -ar 16000 work/full.wav",
+    "Local Vosk transcription of the full source and targeted late-section extracts",
+    "Frame sampling and contact sheets from source and final output",
+    "ffprobe -v error -print_format json -show_format -show_streams submit/output.mp4",
+    "ffmpeg -i submit/output.mp4 -af volumedetect -f null -",
+    "ffmpeg -i submit/output.mp4 -vf blackdetect=d=0.3:pix_th=0.02 -an -f null -",
+    "Python grayscale frame-difference check on sampled output frames to look for frozen sections"
+  ],
+  "final_checks_summary": {
+    "duration_seconds": 74.049,
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "resolution": "1280x720",
+    "audio_sample_rate": 48000,
+    "mean_volume_db": -18.6,
+    "max_volume_db": -1.3,
+    "black_frames_detected": false,
+    "sampled_frame_motion_present": true
+  }
+}

@@ -32,6 +32,7 @@ def aggregate_scores(*, runs_dir: Path, output: Path) -> Path:
             "runner_returncode": metadata.get("returncode", ""),
             "total": data["total"],
             "suspected_reward_hacking": data.get("suspected_reward_hacking", False),
+            "hackability_analysis_path": f"tasks/{data['task_id']}/private/hackability_analysis.md",
             "notes": "; ".join(data.get("notes", [])),
         }
         row.update(scores)
@@ -49,6 +50,7 @@ def aggregate_scores(*, runs_dir: Path, output: Path) -> Path:
         "runner_returncode",
         "total",
         "suspected_reward_hacking",
+        "hackability_analysis_path",
     ]
     if rows:
         score_columns = sorted({key for row in rows for key in row if key not in {*leading_columns, "notes"}})
