@@ -186,7 +186,27 @@ python -m vebench.cli report --runs-dir runs --output reports/tasks_and_rubrics.
 
 The TSV includes a `suspected_reward_hacking` flag and a `hackability_analysis_path` column. The full hackability analysis is not expanded inline in the TSV; it lives in each task package at `tasks/<task_id>/private/hackability_analysis.md`.
 
-Historical run videos are checked in under `runs/<run_id>/workspace/submit/output.mp4`. The corresponding submitted captions, edit decision JSON, run history, and transcript summary sit in the same `submit/` folder when the task produced them.
+## Historical Runs and Outputs
+
+Historical agent runs are stored under `runs/<run_id>/`. Each run folder contains:
+
+```text
+runs/<run_id>/
+  run.json                         # run metadata: task id, agent, model, effort, workspace
+  score.json                       # verifier output for that run
+  workspace/
+    prompt.md                      # exact prompt given to the agent for this run
+    tools.md                       # tool description copied into the workspace
+    materials/source.mp4           # source video visible to the agent
+    submit/
+      output.mp4                   # final edited video produced by the agent
+      edit_decision.json           # submitted edit decision record
+      run_history.md               # action history written or recovered for the run
+      agent_transcript.md          # agent transcript summary or fallback transcript
+      captions.srt                 # caption file, when required by the task
+```
+
+The main output video for a historical run is therefore always expected at `runs/<run_id>/workspace/submit/output.mp4` when that run produced a real submission. Aggregated per-run scores are in `runs/<run_id>/score.json`, and the cross-run table is `reports/tasks_and_rubrics.tsv`. One carried-score sync run, `sync-rerun-gemini31pro-medium`, records the recovered score but has no final video because that API run did not produce a usable local submission.
 
 ## Secret Hygiene
 
